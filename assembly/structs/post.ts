@@ -4,7 +4,7 @@ import { Address } from '@massalabs/massa-as-sdk';
 export class Post implements Serializable {
   constructor(
     public author: Address = new Address(''),
-    public content: string,
+    public content: string = '',
     public createdAt: u64 = 0,
   ) {}
 
