@@ -13,7 +13,7 @@ const provider = Web3Provider.buildnet(account);
 
 console.log('Deploying contract...');
 
-const byteCode = getScByteCode('build', 'social-media.wasm');
+const byteCode = getScByteCode('build', 'main.wasm');
 
 const constructorArgs = new Args();
 

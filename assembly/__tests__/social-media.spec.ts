@@ -21,7 +21,7 @@ import {
   unlikePost,
   updatePost,
   updateProfile,
-} from '../contracts/social-media';
+} from '../contracts/main';
 import { _getProfile } from '../contracts/social-media-internals';
 import { Profile } from '../structs/profile';
 import { Post } from '../structs/post';

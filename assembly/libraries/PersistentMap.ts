@@ -194,6 +194,7 @@ export class PersistentMap<K, V> {
     } else if (isArray<V>()) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
+
       return new Args(Storage.get(this._key(key))).nextStringArray().unwrap();
     } else if (idof<V>() == idof<StaticArray<u8>>()) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
