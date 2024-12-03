@@ -222,32 +222,42 @@ export function getPostLikes(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   return new Args().add(likedUsers).serialize();
 }
 
-// export function unlikePost(binaryArgs: StaticArray<u8>): void {
-//   const args = new Args(binaryArgs);
-//   const postId = args.nextU64().unwrap();
+export function unlikePost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const postId = args.nextU64().unwrap();
 
-//   const userAddress = caller().toString();
+  const userAddress = caller().toString();
 
-//   // Get the list of posts liked by the user
-//   let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
+  // Get the list of posts liked by the user
+  let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
 
-//   // Check if the user has liked the post
-//   if (likedPosts.includes(postId.toString())) {
-//     // Remove the post ID from the user's liked posts
-//     likedPosts = likedPosts.filter((id) => id != postId.toString());
-//     userLikedPosts.set(userAddress, likedPosts);
+  // Check if the user has liked the post
+  let updatedLikedPosts: Array<string> = [];
 
-//     // Get the list of users who liked the post
-//     let likedUsers = postLikedUsers.get(postId, new Array<string>());
+  let found = false;
 
-//     // Remove the user's address from the list
-//     likedUsers = likedUsers.filter((address) => address != userAddress);
-//     postLikedUsers.set(postId, likedUsers);
+  for (let i = 0; i < likedPosts.length; i++) {
+    if (likedPosts[i] != postId.toString()) {
+      updatedLikedPosts.push(likedPosts[i]);
+    } else {
+      found = true;
+    }
+  }
 
-//     // Generate an event
-//     generateEvent(createEvent('UnlikePost', [userAddress, postId.toString()]));
-//   } else {
-//     // Optionally handle if the user hasn't liked the post
-//     assert(false, 'User has not liked this post');
-//   }
-// }
+  assert(found, 'User has not liked this post');
+
+  userLikedPosts.set(userAddress, updatedLikedPosts);
+
+  // Get the list of users who liked the post
+  let likedUsers = postLikedUsers.get(postId, new Array<string>());
+  let updatedLikedUsers: Array<string> = [];
+  for (let i = 0; i < likedUsers.length; i++) {
+    if (likedUsers[i] != userAddress) {
+      updatedLikedUsers.push(likedUsers[i]);
+    }
+  }
+  postLikedUsers.set(postId, updatedLikedUsers);
+
+  // Generate an event
+  generateEvent(createEvent('UnlikePost', [userAddress, postId.toString()]));
+}

@@ -12,11 +12,13 @@ import {
 import {
   constructor,
   createPost,
+  getLikedPosts,
   getPost,
   getPostLikes,
   getPosts,
   getProfile,
   likePost,
+  unlikePost,
   updatePost,
   updateProfile,
 } from '../contracts/social-media';
@@ -127,17 +129,53 @@ describe('test user profile', () => {
     );
   });
 
+  test('get post likes', () => {
+    const args = new Args().add(u64(0)).serialize();
+
+    const postLikes = getPostLikes(args);
+    const deserializedPostLikes = new Args(postLikes).nextStringArray();
+    generateEvent(
+      createEvent('GetPostLikes', [deserializedPostLikes.unwrap()[0]]),
+    );
+  });
+
+  test('get user liked posts', () => {
+    const args = new Args().add(user1).serialize();
+    const userLikedPosts = getLikedPosts(args);
+    const deserializedUserLikedPosts = new Args(
+      userLikedPosts,
+    ).nextStringArray();
+  });
+
   test('unlike post', () => {
-    // const args = new Args().add(u64(0)).serialize();
-    // likePost(args);
-    // unlikePost(args);
+    const postId = u64(0);
 
-    // const postLikes = getPostLikes(args);
+    // Like the post first to ensure unlikePost can be tested
+    const likeArgs = new Args().add(postId).serialize();
 
-    // const deserializedPostLikes = new Args(postLikes).nextStringArray();
+    // Verify the post is liked by user1
+    const postLikesBefore = getPostLikes(likeArgs);
+    const deserializedPostLikesBefore = new Args(
+      postLikesBefore,
+    ).nextStringArray();
 
-    // generateEvent(
-    //   createEvent('GetPostLikes', [deserializedPostLikes.unwrap()[0]]),
-    // );
+    expect(deserializedPostLikesBefore.isOk()).toBe(true);
+
+    // Unlike the post
+    unlikePost(likeArgs);
+
+    // Verify the post is no longer liked by user1
+    const postLikesAfter = getPostLikes(likeArgs);
+    const deserializedPostLikesAfter = new Args(
+      postLikesAfter,
+    ).nextStringArray();
+
+    expect(deserializedPostLikesAfter.isOk()).toBe(true);
+
+    expect(deserializedPostLikesAfter.unwrap().length).toBe(0);
+
+    generateEvent(
+      createEvent('UnlikePostTest', ['User1 unliked post', postId.toString()]),
+    );
   });
 });
