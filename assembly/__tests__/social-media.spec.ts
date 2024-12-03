@@ -13,8 +13,10 @@ import {
   constructor,
   createPost,
   getPost,
+  getPostLikes,
   getPosts,
   getProfile,
+  likePost,
   updatePost,
   updateProfile,
 } from '../contracts/social-media';
@@ -34,6 +36,8 @@ function switchUser(user: string): void {
 
 describe('test user profile', () => {
   beforeAll(() => {
+    resetStorage();
+
     setDeployContext();
 
     constructor([]);
@@ -107,5 +111,33 @@ describe('test user profile', () => {
     generateEvent(createEvent('GetPost', [deserializedPost2.unwrap().text]));
 
     expect(deserializedPost2.unwrap().text).toBe('hello world 2');
+  });
+
+  test('like post', () => {
+    const args = new Args().add(u64(0)).serialize();
+
+    likePost(args);
+
+    const postLikes = getPostLikes(args);
+
+    const deserializedPostLikes = new Args(postLikes).nextStringArray();
+
+    generateEvent(
+      createEvent('GetPostLikes', [deserializedPostLikes.unwrap()[0]]),
+    );
+  });
+
+  test('unlike post', () => {
+    // const args = new Args().add(u64(0)).serialize();
+    // likePost(args);
+    // unlikePost(args);
+
+    // const postLikes = getPostLikes(args);
+
+    // const deserializedPostLikes = new Args(postLikes).nextStringArray();
+
+    // generateEvent(
+    //   createEvent('GetPostLikes', [deserializedPostLikes.unwrap()[0]]),
+    // );
   });
 });

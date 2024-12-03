@@ -10,6 +10,8 @@ export function _getProfile(address: Address): Profile {
   return profile;
 }
 
+
+
 // export function _getPosts(): Array<Post> {
 //   const posts = new Args(Storage.get(postsKey))
 //     .nextSerializableObjectArray<Post>()
