@@ -13,6 +13,7 @@ import { onlyOwner, setOwner } from './utils/ownership';
 import { Profile } from '../structs/profile';
 import {
   COMMENT_ID_KEY,
+  commentRepliesMap,
   commentsMap,
   likesMap,
   POST_ID_KEY,
@@ -261,22 +262,35 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
   const text = args.nextString().unwrap();
+  const parentCommentIdOpt = args.nextU64(); // Optional parent comment ID
 
   assert(postMap.contains(postId.toString()), 'Post not found');
 
   const commentId = u64.parse(Storage.get(COMMENT_ID_KEY));
 
-  const comment = new Comment(commentId, caller(), text, timestamp());
+  let parentId: u64 = U64.MAX_VALUE;
 
+  if (!parentCommentIdOpt.isErr()) {
+    const parentCommentId = parentCommentIdOpt.unwrap();
+    assert(commentsMap.contains(parentCommentId), 'Parent comment not found');
+    parentId = parentCommentId;
+  }
+
+  const comment = new Comment(commentId, caller(), text, timestamp(), parentId);
+
+  // Store the comment
   commentsMap.set(commentId, comment);
 
-  // Get the existing array of comment IDs for the post
-  let postCommentsIds = postCommentsMap.get(postId, new Array<string>());
-
-  // check if the comment already exists
-  if (!postCommentsIds.includes(commentId.toString())) {
-    postCommentsIds.push(commentId.toString());
-    postCommentsMap.set(postId, postCommentsIds);
+  if (parentId === u64.MAX_VALUE) {
+    // Top-level comment on a post
+    let postComments = postCommentsMap.get(postId, new Array<string>());
+    postComments.push(commentId.toString());
+    postCommentsMap.set(postId, postComments);
+  } else {
+    // Reply to a comment
+    let commentReplies = commentRepliesMap.get(parentId, new Array<string>());
+    commentReplies.push(commentId.toString());
+    commentRepliesMap.set(parentId, commentReplies);
   }
 
   // Increment the COMMENT_ID_KEY
@@ -289,6 +303,7 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
       caller().toString(),
       text,
       comment.createdAt.toString(),
+      parentId !== null ? parentId.toString() : 'null',
     ]),
   );
 }
@@ -299,10 +314,7 @@ export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
   assert(postMap.contains(postId.toString()), 'Post not found');
 
-  // Get the array of comment IDs for the post
   const commentIds = postCommentsMap.get(postId, new Array<string>());
-
-  // Retrieve the Comment objects from comments mapping
   let commentsArray: Comment[] = [];
 
   for (let i = 0; i < commentIds.length; i++) {
@@ -313,6 +325,28 @@ export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
   return new Args()
     .addSerializableObjectArray<Comment>(commentsArray)
+    .serialize();
+}
+
+export function getCommentReplies(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const commentId = args.nextU64().unwrap();
+
+  assert(commentsMap.contains(commentId), 'Comment not found');
+
+  const replyIds = commentRepliesMap.get(commentId, new Array<string>());
+  let repliesArray: Comment[] = [];
+
+  for (let i = 0; i < replyIds.length; i++) {
+    const replyId = replyIds[i];
+    const reply = commentsMap.get(u64.parse(replyId), new Comment());
+    repliesArray.push(reply);
+  }
+
+  return new Args()
+    .addSerializableObjectArray<Comment>(repliesArray)
     .serialize();
 }
 
@@ -362,29 +396,6 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
-export function getReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
-  const args = new Args(binaryArgs);
-  const originalPostId = args.nextU64().unwrap();
-
-  assert(
-    postMap.contains(originalPostId.toString()),
-    'Original post not found',
-  );
-
-  const repostIds = postRepostsMap.get(originalPostId, new Array<string>());
-
-  let repostsArray: Repost[] = [];
-  for (let i = 0; i < repostIds.length; i++) {
-    const repostId = repostIds[i];
-    const repost = repostsMap.get(repostId, new Repost());
-    repostsArray.push(repost);
-  }
-
-  return new Args()
-    .addSerializableObjectArray<Repost>(repostsArray)
-    .serialize();
-}
-
 export function unrepostPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const originalPostId = args.nextU64().unwrap();
@@ -430,6 +441,29 @@ export function unrepostPost(binaryArgs: StaticArray<u8>): void {
       timestamp().toString(),
     ]),
   );
+}
+
+export function getReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const originalPostId = args.nextU64().unwrap();
+
+  assert(
+    postMap.contains(originalPostId.toString()),
+    'Original post not found',
+  );
+
+  const repostIds = postRepostsMap.get(originalPostId, new Array<string>());
+
+  let repostsArray: Repost[] = [];
+  for (let i = 0; i < repostIds.length; i++) {
+    const repostId = repostIds[i];
+    const repost = repostsMap.get(repostId, new Repost());
+    repostsArray.push(repost);
+  }
+
+  return new Args()
+    .addSerializableObjectArray<Repost>(repostsArray)
+    .serialize();
 }
 
 export function getUserReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {

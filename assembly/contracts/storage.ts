@@ -29,7 +29,7 @@ export const postCommentsMap = new PersistentMap<u64, Array<string>>(
 export const commentsMap = new PersistentMap<u64, Comment>('comments');
 
 // New mapping from comment ID to an array of reply comment IDs
-export const commentRepliesMap = new PersistentMap<u64, Array<u64>>(
+export const commentRepliesMap = new PersistentMap<u64, Array<string>>(
   'commentReplies',
 );
 
