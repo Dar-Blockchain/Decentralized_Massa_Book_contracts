@@ -1,5 +1,5 @@
 import { Args, Result, Serializable } from '@massalabs/as-types';
-import { Address } from '@massalabs/massa-as-sdk';
+import { Address, generateEvent } from '@massalabs/massa-as-sdk';
 
 // User Profile structure
 export class Profile implements Serializable {
@@ -30,5 +30,11 @@ export class Profile implements Serializable {
     this.avatar = args.nextString().expect('Failed to deserialize avatar');
 
     return new Result(args.offset);
+  }
+
+  toString(): string {
+    return `"Address": "${this.address.toString()}", "Name": "${
+      this.name
+    }", "Bio": "${this.bio}", Avatar: "${this.avatar}"`;
   }
 }

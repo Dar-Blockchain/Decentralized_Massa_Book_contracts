@@ -7,7 +7,12 @@ import {
   Storage,
   timestamp,
 } from '@massalabs/massa-as-sdk';
-import { Args, stringToBytes } from '@massalabs/as-types';
+import {
+  Args,
+  bytesToString,
+  serializableObjectsArrayToBytes,
+  stringToBytes,
+} from '@massalabs/as-types';
 import { _setOwner, OWNER_KEY } from './utils/ownership-internal';
 import { onlyOwner, setOwner } from './utils/ownership';
 import { Profile } from '../structs/profile';
@@ -80,6 +85,8 @@ export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const profile = _getProfile(new Address(userAddress));
 
   return profile.serialize();
+  // return serializableObjectsArrayToBytes([profile]);
+  // return stringToBytes(profile.toString());
 }
 
 export function updateProfile(binaryArgs: StaticArray<u8>): void {

@@ -18,6 +18,7 @@ import {
   getPosts,
   getProfile,
   likePost,
+  repostPost,
   unlikePost,
   updatePost,
   updateProfile,
@@ -176,5 +177,28 @@ describe('test user profile', () => {
     generateEvent(
       createEvent('UnlikePostTest', ['User1 unliked post', postId.toString()]),
     );
+  });
+
+  test('repost post', () => {
+    const post = getPost(new Args().add(u64(0)).serialize());
+
+    const deserializedPost = new Args(post).nextSerializable<Post>();
+
+    generateEvent(createEvent('GetPost', [deserializedPost.unwrap().text]));
+
+    expect(deserializedPost.unwrap().text).toBe('hello world 2');
+
+    const args = new Args()
+      .add(u64(0))
+      .serialize();
+
+    repostPost(args);
+
+    const post2 = getPost(new Args().add(u64(0)).serialize());
+
+    const deserializedPost2 = new Args(post2).nextSerializable<Post>();
+    generateEvent(createEvent('GetPost', [deserializedPost2.unwrap().text]));
+
+    expect(deserializedPost2.unwrap().text).toBe('hello world 2');
   });
 });
