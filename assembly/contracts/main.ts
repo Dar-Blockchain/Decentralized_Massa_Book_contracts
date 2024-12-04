@@ -95,10 +95,11 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
 
   const userAddress = profile.address;
 
-  // assert(
-  //   caller().toString() == userAddress.toString(),
-  //   'Caller is not the profile owner',
-  // );
+  assert(
+    caller().toString() == userAddress.toString() ||
+      caller().toString() == Storage.get(OWNER_KEY),
+    'Caller does not have permission to update this profile',
+  );
 
   profileKey.set(userAddress.toString(), profile);
 

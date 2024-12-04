@@ -5,7 +5,7 @@ import {
   SmartContract,
   Web3Provider,
 } from '@massalabs/massa-web3';
-import { getProfile } from './test/contractFunc';
+import { getUserProfile, updateUserProfile } from './test/contractFunc';
 import { getScByteCode } from './utils';
 
 const account = await Account.fromEnv('PRIVATE_KEY');
@@ -26,18 +26,23 @@ const contract = await SmartContract.deploy(
 
 console.log('Contract deployed at:', contract.address);
 
-// const contract = new SmartContract(
-//   provider,
-//   'AS12eQph8gcmdDDzjEpsinz9x2oFxAwyaefVgNziNARat2MrTgUcX',
-// );
-
 console.log('Interacting with contract:', contract.address);
 
-async function firstTest() {
-  await getProfile(contract, account.address.toString());
+async function testProfile() {
+  await getUserProfile(contract, account.address.toString());
+  // update user profile
+  await updateUserProfile(contract, account.address.toString());
+  // get user profile
+  await getUserProfile(contract, account.address.toString());
 }
 
-await firstTest();
+
+async function testPost() {
+  
+}
+
+
+await testProfile();
 
 console.log('All the smart conract Events :');
 
