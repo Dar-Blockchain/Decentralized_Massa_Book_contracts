@@ -12,6 +12,7 @@ import {
   SmartContract,
 } from '@massalabs/massa-web3';
 import { Profile } from './structs/profile';
+import { Post } from './structs/post';
 
 export async function getUserProfile(contract: SmartContract, address: string) {
   const args = new Args().addString(address);
@@ -57,4 +58,32 @@ export async function updateUserProfile(
     console.error('Operation failed with status:', operationStatus);
     return false;
   }
+}
+
+export async function addPost(contract: SmartContract, text: string) {
+  const args = new Args().addString(text).addString('');
+
+  const operation = await contract.call('createPost', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Post added successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getPosts(contract: SmartContract) {
+  const result = await contract.read('getPosts', new Args().serialize());
+
+  const deserializedPosts = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Post>(Post);
+
+  console.log('Posts :', deserializedPosts);
 }

@@ -121,6 +121,14 @@ export function getPosts(): StaticArray<u8> {
 export function createPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
+  // make sure the user has a profile
+  const profile = _getProfile(caller());
+
+  assert(
+    profile.address.toString() == caller().toString(),
+    'User has no profile. Please create a profile first.',
+  );
+
   const text = args.nextString().unwrap();
   const image = args.nextString().unwrap();
   const createdAt = timestamp();

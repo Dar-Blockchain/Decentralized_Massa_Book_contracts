@@ -5,7 +5,12 @@ import {
   SmartContract,
   Web3Provider,
 } from '@massalabs/massa-web3';
-import { getUserProfile, updateUserProfile } from './test/contractFunc';
+import {
+  addPost,
+  getPosts,
+  getUserProfile,
+  updateUserProfile,
+} from './test/contractFunc';
 import { getScByteCode } from './utils';
 
 const account = await Account.fromEnv('PRIVATE_KEY');
@@ -36,13 +41,15 @@ async function testProfile() {
   await getUserProfile(contract, account.address.toString());
 }
 
-
 async function testPost() {
-  
+  // add post to the contract
+  await addPost(contract, 'hello world');
+  // get posts from the contract
+  await getPosts(contract);
 }
 
-
 await testProfile();
+await testPost();
 
 console.log('All the smart conract Events :');
 
