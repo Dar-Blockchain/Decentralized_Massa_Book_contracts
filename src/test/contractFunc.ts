@@ -61,6 +61,7 @@ export async function updateUserProfile(
 }
 
 export async function addPost(contract: SmartContract, text: string) {
+  console.log('Adding a post to the contract...');
   const args = new Args().addString(text).addString('');
 
   const operation = await contract.call('createPost', args.serialize(), {
@@ -86,4 +87,15 @@ export async function getPosts(contract: SmartContract) {
   ).nextSerializableObjectArray<Post>(Post);
 
   console.log('Posts :', deserializedPosts);
+}
+
+export async function getPostById(contract: SmartContract, id: bigint) {
+  const result = await contract.read(
+    'getPost',
+    new Args().addU64(id).serialize(),
+  );
+
+  const deserializedPost = new Args(result.value).nextSerializable<Post>(Post);
+
+  console.log('Post :', deserializedPost);
 }

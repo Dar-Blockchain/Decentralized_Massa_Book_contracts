@@ -7,6 +7,7 @@ import {
 } from '@massalabs/massa-web3';
 import {
   addPost,
+  getPostById,
   getPosts,
   getUserProfile,
   updateUserProfile,
@@ -46,6 +47,14 @@ async function testPost() {
   await addPost(contract, 'hello world');
   // get posts from the contract
   await getPosts(contract);
+  // get post by id
+  await getPostById(contract, 0n);
+  // add another post to the contract
+  await addPost(contract, 'hello world 2');
+  // get posts from the contract
+  await getPosts(contract);
+  // get post by id
+  await getPostById(contract, 1n);
 }
 
 await testProfile();
