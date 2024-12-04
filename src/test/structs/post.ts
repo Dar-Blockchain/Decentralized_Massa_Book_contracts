@@ -6,6 +6,8 @@ export class Post implements Serializable<Post> {
     public author: string = '', // Address serialized as string
     public text: string = '',
     public image: string = '',
+    public isRepost: boolean = false,
+    public repostedPostId: bigint = 0n, // Use bigint for u64 values
     public createdAt: bigint = 0n, // Use bigint for timestamp
   ) {}
 
@@ -16,6 +18,8 @@ export class Post implements Serializable<Post> {
       .addString(this.author) // Author as a string
       .addString(this.text)
       .addString(this.image)
+      .addBool(this.isRepost)
+      .addU64(this.repostedPostId)
       .addU64(this.createdAt);
 
     return new Uint8Array(args.serialize());
@@ -29,6 +33,8 @@ export class Post implements Serializable<Post> {
     this.author = args.nextString(); // Deserialize author
     this.text = args.nextString(); // Deserialize text
     this.image = args.nextString(); // Deserialize image
+    this.isRepost = args.nextBool(); // Deserialize isRepost
+    this.repostedPostId = args.nextU64(); // Deserialize repostedPostId as bigint
     this.createdAt = args.nextU64(); // Deserialize createdAt as bigint
 
     return { instance: this, offset: args.getOffset() };

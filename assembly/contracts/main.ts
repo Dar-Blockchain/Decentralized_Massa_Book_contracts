@@ -36,6 +36,8 @@ import { Post } from '../structs/post';
 import { Comment } from '../structs/comment';
 import { Repost } from '../structs/repost';
 
+const START_POST_ID = 1;
+
 /**
  * This function is meant to be called only one time: when the contract is deployed.
  *
@@ -50,7 +52,7 @@ export function constructor(binaryArgs: StaticArray<u8>): void {
   // set the contract owner
   setOwner(new Args().add(admin).serialize());
 
-  Storage.set(POST_ID_KEY, '0');
+  Storage.set(POST_ID_KEY, '1');
 
   // generate the event for the contract  deployment
   generateEvent(createEvent('ContractDeployed', [admin]));
@@ -85,8 +87,6 @@ export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const profile = _getProfile(new Address(userAddress));
 
   return profile.serialize();
-  // return serializableObjectsArrayToBytes([profile]);
-  // return stringToBytes(profile.toString());
 }
 
 export function updateProfile(binaryArgs: StaticArray<u8>): void {
@@ -123,7 +123,7 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
 
   const postId = u64.parse(Storage.get(POST_ID_KEY));
 
-  const post = new Post(postId, caller(), text, image, createdAt);
+  const post = new Post(postId, caller(), text, image, false, 0, createdAt);
 
   postMap.set(postId.toString(), post);
 
@@ -140,11 +140,95 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+export function repostPost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const originalPostId = args.nextU64().unwrap();
+  const userAddress = caller().toString();
+
+  assert(
+    postMap.contains(originalPostId.toString()),
+    'Original post not found',
+  );
+
+  // Check if the user has already reposted this post
+  const userRepostedPostsIds = _getUserRepostedPostsIds(userAddress);
+
+  assert(
+    userRepostedPostsIds.indexOf(originalPostId) < 0,
+    'User has already reposted this post',
+  );
+
+  // craete new post with isRepost = true
+  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
+
+  const originalPost = postMap.get(originalPostId.toString(), new Post());
+
+  const repost = new Post(
+    lastPostId,
+    caller(),
+    originalPost.text,
+    originalPost.image,
+    true,
+    originalPostId,
+  );
+
+  postMap.set(lastPostId.toString(), repost);
+
+  Storage.set(POST_ID_KEY, (lastPostId + 1).toString());
+}
+
+export function unrepostPost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const originalPostId = args.nextU64().unwrap();
+  const userAddress = caller().toString();
+
+  // Check if the user has reposted this post
+  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
+  let postIndex = userRepostedPosts.indexOf(originalPostId.toString());
+  assert(postIndex >= 0, 'User has not reposted this post');
+
+  // Remove from userReposts
+  userRepostedPosts.splice(postIndex, 1);
+  userReposts.set(userAddress, userRepostedPosts);
+
+  // Remove from postRepostsMap
+  let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
+  let repostIdToRemove: string | null = null;
+  for (let i = 0; i < repostIds.length; i++) {
+    let repostId = repostIds[i];
+    let repost = repostsMap.get(repostId, new Repost());
+    if (repost.reposter.toString() == userAddress) {
+      repostIdToRemove = repostId;
+      break;
+    }
+  }
+  assert(repostIdToRemove != null, 'Repost not found');
+
+  // Remove from repostIds array
+  let index = repostIds.indexOf(repostIdToRemove!);
+  if (index >= 0) {
+    repostIds.splice(index, 1);
+    postRepostsMap.set(originalPostId, repostIds);
+  }
+
+  // Delete the repost from repostsMap
+  repostsMap.delete(repostIdToRemove!);
+
+  generateEvent(
+    createEvent('PostUnreposted', [
+      repostIdToRemove!,
+      originalPostId.toString(),
+      userAddress,
+      timestamp().toString(),
+    ]),
+  );
+}
+
 export function getPosts(): StaticArray<u8> {
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
   let posts: Post[] = [];
 
-  for (let i = u64(0); i < lastPostId; i++) {
+  for (let i = u64(START_POST_ID); i < lastPostId; i++) {
     const post = postMap.get(i.toString(), new Post());
     posts.push(post);
   }
@@ -161,7 +245,7 @@ export function getUserPosts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
   let posts: Post[] = [];
 
-  for (let i = u64(0); i < lastPostId; i++) {
+  for (let i = u64(START_POST_ID); i < lastPostId; i++) {
     const post = postMap.get(i.toString(), new Post());
 
     if (post.author.toString() == userAddress) {
@@ -183,6 +267,19 @@ export function getPost(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const post = postMap.get(postId.toString(), new Post());
 
   return post.serialize();
+}
+
+export function getUserRepostedPosts(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  const userRepostedPosts = _getUserRepostedPosts(userAddress);
+
+  return new Args()
+    .addSerializableObjectArray<Post>(userRepostedPosts)
+    .serialize();
 }
 
 export function updatePost(binaryArgs: StaticArray<u8>): void {
@@ -386,99 +483,6 @@ export function getCommentReplies(
     .serialize();
 }
 
-export function repostPost(binaryArgs: StaticArray<u8>): void {
-  const args = new Args(binaryArgs);
-  const originalPostId = args.nextU64().unwrap();
-  const userAddress = caller().toString();
-
-  assert(
-    postMap.contains(originalPostId.toString()),
-    'Original post not found',
-  );
-
-  // Prevent duplicate reposts
-  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
-  assert(
-    !userRepostedPosts.includes(originalPostId.toString()),
-    'Post already reposted by user',
-  );
-
-  const repostId = u64.parse(Storage.get(REPOST_ID_KEY));
-
-  const repost = new Repost(repostId, originalPostId, caller(), timestamp());
-
-  // Store the repost
-  repostsMap.set(repostId.toString(), repost);
-
-  // Update postRepostsMap
-  let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
-  repostIds.push(repostId.toString());
-  postRepostsMap.set(originalPostId, repostIds);
-
-  // Update userReposts
-  userRepostedPosts.push(originalPostId.toString());
-  userReposts.set(userAddress, userRepostedPosts);
-
-  // Increment the REPOST_ID_KEY
-  Storage.set(REPOST_ID_KEY, (repostId + 1).toString());
-
-  generateEvent(
-    createEvent('PostReposted', [
-      repostId.toString(),
-      originalPostId.toString(),
-      userAddress,
-      repost.createdAt.toString(),
-    ]),
-  );
-}
-
-export function unrepostPost(binaryArgs: StaticArray<u8>): void {
-  const args = new Args(binaryArgs);
-  const originalPostId = args.nextU64().unwrap();
-  const userAddress = caller().toString();
-
-  // Check if the user has reposted this post
-  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
-  let postIndex = userRepostedPosts.indexOf(originalPostId.toString());
-  assert(postIndex >= 0, 'User has not reposted this post');
-
-  // Remove from userReposts
-  userRepostedPosts.splice(postIndex, 1);
-  userReposts.set(userAddress, userRepostedPosts);
-
-  // Remove from postRepostsMap
-  let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
-  let repostIdToRemove: string | null = null;
-  for (let i = 0; i < repostIds.length; i++) {
-    let repostId = repostIds[i];
-    let repost = repostsMap.get(repostId, new Repost());
-    if (repost.reposter.toString() == userAddress) {
-      repostIdToRemove = repostId;
-      break;
-    }
-  }
-  assert(repostIdToRemove != null, 'Repost not found');
-
-  // Remove from repostIds array
-  let index = repostIds.indexOf(repostIdToRemove!);
-  if (index >= 0) {
-    repostIds.splice(index, 1);
-    postRepostsMap.set(originalPostId, repostIds);
-  }
-
-  // Delete the repost from repostsMap
-  repostsMap.delete(repostIdToRemove!);
-
-  generateEvent(
-    createEvent('PostUnreposted', [
-      repostIdToRemove!,
-      originalPostId.toString(),
-      userAddress,
-      timestamp().toString(),
-    ]),
-  );
-}
-
 export function getReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
   const originalPostId = args.nextU64().unwrap();
@@ -519,4 +523,42 @@ export function getUserReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
 function _getLikeKey(postId: u64, userAddress: string): string {
   return 'like::' + postId.toString() + '::' + userAddress;
+}
+
+function _getUserRepostedPosts(userAddress: string): Post[] {
+  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
+
+  let repostedPosts: Post[] = [];
+
+  for (let i = u64(START_POST_ID); i < lastPostId; i++) {
+    const post = postMap.get(i.toString(), new Post());
+    if (
+      post.author.toString() == userAddress &&
+      post.isRepost == true &&
+      post.repostedPostId > 0
+    ) {
+      repostedPosts.push(post);
+    }
+  }
+
+  return repostedPosts;
+}
+
+function _getUserRepostedPostsIds(userAddress: string): u64[] {
+  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
+
+  let repostedPosts: u64[] = [];
+
+  for (let i = u64(START_POST_ID); i < lastPostId; i++) {
+    const post = postMap.get(i.toString(), new Post());
+    if (
+      post.author.toString() == userAddress &&
+      post.isRepost == true &&
+      post.repostedPostId > 0
+    ) {
+      repostedPosts.push(post.repostedPostId);
+    }
+  }
+
+  return repostedPosts;
 }

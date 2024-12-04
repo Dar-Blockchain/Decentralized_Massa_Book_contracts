@@ -7,6 +7,8 @@ export class Post implements Serializable {
     public author: Address = new Address(''),
     public text: string = '',
     public image: string = '',
+    public isRepost: bool = false,
+    public repostedPostId: u64 = 0,
     public createdAt: u64 = 0,
   ) {}
 
@@ -16,6 +18,8 @@ export class Post implements Serializable {
       .add(this.author) // Serialize the author's profile
       .add(this.text)
       .add(this.image)
+      .add(this.isRepost)
+      .add(this.repostedPostId)
       .add(this.createdAt)
       .serialize();
   }
@@ -28,6 +32,10 @@ export class Post implements Serializable {
     );
     this.text = args.nextString().expect('Failed to deserialize content');
     this.image = args.nextString().expect('Failed to deserialize image');
+    this.isRepost = args.nextBool().expect('Failed to deserialize isRepost');
+    this.repostedPostId = args
+      .nextU64()
+      .expect('Failed to deserialize repostedPostId');
     const createdAtTimestamp = args.nextU64();
     this.createdAt = createdAtTimestamp.isOk()
       ? createdAtTimestamp.unwrap()

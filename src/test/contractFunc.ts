@@ -36,6 +36,7 @@ export async function updateUserProfile(
   address: string,
   name: string,
 ) {
+  console.log('Updating the profile of the user :', address);
   const newProfile = new Profile(
     address,
     name,
@@ -73,6 +74,25 @@ export async function addPost(contract: SmartContract, text: string) {
 
   if (operationStatus === OperationStatus.Success) {
     console.log('Post added successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function repostPost(contract: SmartContract, postId: bigint) {
+  console.log('Reposting post with id:', postId);
+  const args = new Args().addU64(postId);
+
+  const operation = await contract.call('repostPost', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Post Reposted successfully');
     return true;
   } else {
     console.error('Operation failed with status:', operationStatus);
