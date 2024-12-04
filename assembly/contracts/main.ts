@@ -106,18 +106,6 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('UpdateProfile', [userAddress.toString()]));
 }
 
-export function getPosts(): StaticArray<u8> {
-  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
-  let posts: Post[] = [];
-
-  for (let i = u64(0); i < lastPostId; i++) {
-    const post = postMap.get(i.toString(), new Post());
-    posts.push(post);
-  }
-
-  return new Args().addSerializableObjectArray<Post>(posts).serialize();
-}
-
 export function createPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
@@ -150,6 +138,38 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
       post.createdAt.toString(),
     ]),
   );
+}
+
+export function getPosts(): StaticArray<u8> {
+  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
+  let posts: Post[] = [];
+
+  for (let i = u64(0); i < lastPostId; i++) {
+    const post = postMap.get(i.toString(), new Post());
+    posts.push(post);
+  }
+
+  return new Args().addSerializableObjectArray<Post>(posts).serialize();
+}
+
+export function getUserPosts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+
+  const userAddress = args.nextString().unwrap();
+
+  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
+
+  let posts: Post[] = [];
+
+  for (let i = u64(0); i < lastPostId; i++) {
+    const post = postMap.get(i.toString(), new Post());
+
+    if (post.author.toString() == userAddress) {
+      posts.push(post);
+    }
+  }
+
+  return new Args().addSerializableObjectArray<Post>(posts).serialize();
 }
 
 export function getPost(binaryArgs: StaticArray<u8>): StaticArray<u8> {

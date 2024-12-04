@@ -34,10 +34,11 @@ export async function getUserProfile(contract: SmartContract, address: string) {
 export async function updateUserProfile(
   contract: SmartContract,
   address: string,
+  name: string,
 ) {
   const newProfile = new Profile(
     address,
-    'Ayoub Amer',
+    name,
     'https://www.google.com',
     'Junior full stack dev',
   );
@@ -98,4 +99,15 @@ export async function getPostById(contract: SmartContract, id: bigint) {
   const deserializedPost = new Args(result.value).nextSerializable<Post>(Post);
 
   console.log('Post :', deserializedPost);
+}
+
+export async function getuserPosts(contract: SmartContract, address: string) {
+  const args = new Args().addString(address);
+  const result = await contract.read('getUserPosts', args.serialize());
+
+  const deserializedPosts = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Post>(Post);
+
+  console.log(`User ${address} posts :`, deserializedPosts);
 }
