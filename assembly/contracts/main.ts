@@ -170,57 +170,40 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
     originalPost.image,
     true,
     originalPostId,
+    timestamp(),
   );
 
   postMap.set(lastPostId.toString(), repost);
 
   Storage.set(POST_ID_KEY, (lastPostId + 1).toString());
-}
-
-export function unrepostPost(binaryArgs: StaticArray<u8>): void {
-  const args = new Args(binaryArgs);
-  const originalPostId = args.nextU64().unwrap();
-  const userAddress = caller().toString();
-
-  // Check if the user has reposted this post
-  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
-  let postIndex = userRepostedPosts.indexOf(originalPostId.toString());
-  assert(postIndex >= 0, 'User has not reposted this post');
-
-  // Remove from userReposts
-  userRepostedPosts.splice(postIndex, 1);
-  userReposts.set(userAddress, userRepostedPosts);
-
-  // Remove from postRepostsMap
-  let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
-  let repostIdToRemove: string | null = null;
-  for (let i = 0; i < repostIds.length; i++) {
-    let repostId = repostIds[i];
-    let repost = repostsMap.get(repostId, new Repost());
-    if (repost.reposter.toString() == userAddress) {
-      repostIdToRemove = repostId;
-      break;
-    }
-  }
-  assert(repostIdToRemove != null, 'Repost not found');
-
-  // Remove from repostIds array
-  let index = repostIds.indexOf(repostIdToRemove!);
-  if (index >= 0) {
-    repostIds.splice(index, 1);
-    postRepostsMap.set(originalPostId, repostIds);
-  }
-
-  // Delete the repost from repostsMap
-  repostsMap.delete(repostIdToRemove!);
 
   generateEvent(
-    createEvent('PostUnreposted', [
-      repostIdToRemove!,
+    createEvent('RepostPost', [
+      repost.id.toString(),
       originalPostId.toString(),
-      userAddress,
-      timestamp().toString(),
+      repost.author.toString(),
     ]),
+  );
+}
+
+export function deletePost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const postId = args.nextU64().unwrap();
+
+  assert(postMap.contains(postId.toString()), 'Post not found');
+
+  const post = postMap.get(postId.toString(), new Post());
+
+  assert(
+    post.author.toString() == caller().toString() ||
+      Storage.get(OWNER_KEY) == caller().toString(),
+    'Caller has no permission to delete this post',
+  );
+
+  postMap.delete(postId.toString());
+
+  generateEvent(
+    createEvent('DeletePost', [postId.toString(), caller().toString()]),
   );
 }
 

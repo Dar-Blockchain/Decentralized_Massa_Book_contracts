@@ -7,6 +7,7 @@ import {
 } from '@massalabs/massa-web3';
 import {
   addPost,
+  deletePost,
   getPostById,
   getPosts,
   getuserPosts,
@@ -84,6 +85,14 @@ async function testRepost() {
   await getPosts(contract);
   // add repost by user 2
   await repostPost(contract2, 1n);
+  // get posts from the contract
+  await getPosts(contract);
+  // delete a repost
+  await deletePost(contract2, 2n);
+  // get posts from the contract
+  await getPosts(contract);
+  // delete original post
+  await deletePost(contract, 1n);
   // get posts from the contract
   await getPosts(contract);
 }

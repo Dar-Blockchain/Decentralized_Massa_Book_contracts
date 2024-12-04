@@ -131,3 +131,22 @@ export async function getuserPosts(contract: SmartContract, address: string) {
 
   console.log(`User ${address} posts :`, deserializedPosts);
 }
+
+export async function deletePost(contract: SmartContract, postId: bigint) {
+  console.log(`Deleting post with id ${postId}`);
+  const args = new Args().addU64(postId);
+
+  const operation = await contract.call('deletePost', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Post deleted successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
