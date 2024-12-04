@@ -13,9 +13,12 @@ export const profileKey = new PersistentMap<string, Profile>('profile');
 
 export const postMap = new PersistentMap<string, Post>('post');
 
+export const likesMap = new PersistentMap<string, bool>('likesMap');
+
 export const userLikedPosts = new PersistentMap<string, Array<string>>(
   'userLikedPosts',
 );
+
 export const postLikedUsers = new PersistentMap<u64, Array<string>>(
   'postLikedUsers',
 );
@@ -25,7 +28,16 @@ export const postCommentsMap = new PersistentMap<u64, Array<string>>(
 );
 export const commentsMap = new PersistentMap<u64, Comment>('comments');
 
+// New mapping from comment ID to an array of reply comment IDs
+export const commentRepliesMap = new PersistentMap<u64, Array<u64>>(
+  'commentReplies',
+);
+
+export const userReposts = new PersistentMap<string, Array<string>>(
+  'userReposts',
+);
+
+export const repostsMap = new PersistentMap<string, Repost>('reposts');
 export const postRepostsMap = new PersistentMap<u64, Array<string>>(
   'postReposts',
 );
-export const repostsMap = new PersistentMap<string, Repost>('reposts');

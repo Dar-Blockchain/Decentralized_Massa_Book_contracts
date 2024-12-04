@@ -7,15 +7,18 @@ export class Comment implements Serializable {
     public commenter: Address = new Address(''),
     public text: string = '',
     public createdAt: u64 = 0,
+    public parentId: u64 = U64.MAX_VALUE, // New field for parent comment ID
   ) {}
 
   serialize(): StaticArray<u8> {
-    return new Args()
+    const args = new Args()
       .add(this.id)
       .add(this.commenter)
       .add(this.text)
       .add(this.createdAt)
-      .serialize();
+      .add(this.parentId);
+
+    return args.serialize();
   }
 
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
@@ -26,6 +29,7 @@ export class Comment implements Serializable {
     );
     this.text = args.nextString().expect('Failed to deserialize text');
     this.createdAt = args.nextU64().expect('Failed to deserialize createdAt');
+    this.parentId = args.nextU64().expect('Failed to deserialize parentId');
 
     return new Result(args.offset);
   }

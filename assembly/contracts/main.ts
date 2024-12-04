@@ -14,6 +14,7 @@ import { Profile } from '../structs/profile';
 import {
   COMMENT_ID_KEY,
   commentsMap,
+  likesMap,
   POST_ID_KEY,
   postCommentsMap,
   postLikedUsers,
@@ -23,6 +24,7 @@ import {
   REPOST_ID_KEY,
   repostsMap,
   userLikedPosts,
+  userReposts,
 } from './storage';
 import { Post } from '../structs/post';
 import { Comment } from '../structs/comment';
@@ -170,59 +172,47 @@ export function updatePost(binaryArgs: StaticArray<u8>): void {
 export function likePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
-
-  // Ensure the post exists
-  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
-  assert(postId < lastPostId, 'Post not found');
-
   const userAddress = caller().toString();
 
-  // Get the list of posts liked by the user
-  let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
+  // Ensure the post exists
+  assert(postMap.contains(postId.toString()), 'Post not found');
+
+  const likeKey = _getLikeKey(postId, userAddress);
 
   // Check if the user has already liked the post
-  if (!likedPosts.includes(postId.toString())) {
-    // Add the post ID to the user's liked posts
-    likedPosts.push(postId.toString());
-    userLikedPosts.set(userAddress, likedPosts);
+  assert(!likesMap.contains(likeKey), 'User has already liked this post');
 
-    // Get the list of users who liked the post
-    let likedUsers = postLikedUsers.get(postId, new Array<string>());
+  // Record the like
+  likesMap.set(likeKey, true);
 
-    // check if the user has already liked the post
-    if (!likedUsers.includes(userAddress)) {
-      // Add the user's address to the list
-      likedUsers.push(userAddress);
-      postLikedUsers.set(postId, likedUsers);
-    }
+  // Update postLikes mapping
+  let likedUsers = postLikedUsers.get(postId, new Array<string>());
+  likedUsers.push(userAddress);
+  postLikedUsers.set(postId, likedUsers);
 
-    // Add the user's address to the list
-    likedUsers.push(userAddress);
-    postLikedUsers.set(postId, likedUsers);
+  // Update userLikes mapping
+  let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
+  likedPosts.push(postId.toString());
+  userLikedPosts.set(userAddress, likedPosts);
 
-    // Generate an event
-    generateEvent(createEvent('LikePost', [userAddress, postId.toString()]));
-  } else {
-    // Optionally handle if the user has already liked the post
-    // For example, you could throw an error or ignore
-    assert(false, 'User has already liked this post');
-  }
+  // Generate an event
+  generateEvent(createEvent('LikePost', [userAddress, postId.toString()]));
 }
 
 export function getLikedPosts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
   const userAddress = args.nextString().unwrap();
 
-  const likedPosts = userLikedPosts.get(userAddress, new Array<string>());
+  const likedPostIds = userLikedPosts.get(userAddress, new Array<string>());
 
-  // Fetch the posts
-  let posts: Post[] = [];
-  for (let i = 0; i < likedPosts.length; i++) {
-    const post = postMap.get(likedPosts[i].toString(), new Post());
-    posts.push(post);
+  let likedPosts: Post[] = [];
+  for (let i = 0; i < likedPostIds.length; i++) {
+    const postId = likedPostIds[i];
+    const post = postMap.get(postId.toString(), new Post());
+    likedPosts.push(post);
   }
 
-  return new Args().addSerializableObjectArray<Post>(posts).serialize();
+  return new Args().addSerializableObjectArray<Post>(likedPosts).serialize();
 }
 
 export function getPostLikes(binaryArgs: StaticArray<u8>): StaticArray<u8> {
@@ -237,40 +227,31 @@ export function getPostLikes(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 export function unlikePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
-
   const userAddress = caller().toString();
 
-  // Get the list of posts liked by the user
-  let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
-
-  const ind = likedPosts.indexOf(postId.toString());
+  const likeKey = _getLikeKey(postId, userAddress);
 
   // Check if the user has liked the post
-  let updatedLikedPosts: Array<string> = [];
+  assert(likesMap.contains(likeKey), 'User has not liked this post');
 
-  let found = false;
+  // Remove the like
+  likesMap.delete(likeKey);
 
-  for (let i = 0; i < likedPosts.length; i++) {
-    if (likedPosts[i] != postId.toString()) {
-      updatedLikedPosts.push(likedPosts[i]);
-    } else {
-      found = true;
-    }
-  }
-
-  assert(found, 'User has not liked this post');
-
-  userLikedPosts.set(userAddress, updatedLikedPosts);
-
-  // Get the list of users who liked the post
+  // Update postLikes mapping
   let likedUsers = postLikedUsers.get(postId, new Array<string>());
-  let updatedLikedUsers: Array<string> = [];
-  for (let i = 0; i < likedUsers.length; i++) {
-    if (likedUsers[i] != userAddress) {
-      updatedLikedUsers.push(likedUsers[i]);
-    }
+  let userIndex = likedUsers.indexOf(userAddress);
+  if (userIndex >= 0) {
+    likedUsers.splice(userIndex, 1);
+    postLikedUsers.set(postId, likedUsers);
   }
-  postLikedUsers.set(postId, updatedLikedUsers);
+
+  // Update userLikes mapping
+  let likedPosts = userLikedPosts.get(userAddress, new Array<string>());
+  let postIndex = likedPosts.indexOf(postId.toString());
+  if (postIndex >= 0) {
+    likedPosts.splice(postIndex, 1);
+    userLikedPosts.set(userAddress, likedPosts);
+  }
 
   // Generate an event
   generateEvent(createEvent('UnlikePost', [userAddress, postId.toString()]));
@@ -338,25 +319,35 @@ export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 export function repostPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const originalPostId = args.nextU64().unwrap();
+  const userAddress = caller().toString();
 
   assert(
     postMap.contains(originalPostId.toString()),
     'Original post not found',
   );
 
+  // Prevent duplicate reposts
+  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
+  assert(
+    !userRepostedPosts.includes(originalPostId.toString()),
+    'Post already reposted by user',
+  );
+
   const repostId = u64.parse(Storage.get(REPOST_ID_KEY));
 
   const repost = new Repost(repostId, originalPostId, caller(), timestamp());
 
-  // Store the repost in 'reposts' mapping
+  // Store the repost
   repostsMap.set(repostId.toString(), repost);
 
-  // Get the existing array of repost IDs for the original post
+  // Update postRepostsMap
   let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
-  // Add the new repost ID to the array
   repostIds.push(repostId.toString());
-  // Store the updated array back into 'postReposts'
   postRepostsMap.set(originalPostId, repostIds);
+
+  // Update userReposts
+  userRepostedPosts.push(originalPostId.toString());
+  userReposts.set(userAddress, userRepostedPosts);
 
   // Increment the REPOST_ID_KEY
   Storage.set(REPOST_ID_KEY, (repostId + 1).toString());
@@ -365,7 +356,7 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
     createEvent('PostReposted', [
       repostId.toString(),
       originalPostId.toString(),
-      caller().toString(),
+      userAddress,
       repost.createdAt.toString(),
     ]),
   );
@@ -380,10 +371,8 @@ export function getReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
     'Original post not found',
   );
 
-  // Get the array of repost IDs for the original post
   const repostIds = postRepostsMap.get(originalPostId, new Array<string>());
 
-  // Retrieve the Repost objects from 'reposts' mapping
   let repostsArray: Repost[] = [];
   for (let i = 0; i < repostIds.length; i++) {
     const repostId = repostIds[i];
@@ -394,4 +383,70 @@ export function getReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   return new Args()
     .addSerializableObjectArray<Repost>(repostsArray)
     .serialize();
+}
+
+export function unrepostPost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const originalPostId = args.nextU64().unwrap();
+  const userAddress = caller().toString();
+
+  // Check if the user has reposted this post
+  let userRepostedPosts = userReposts.get(userAddress, new Array<string>());
+  let postIndex = userRepostedPosts.indexOf(originalPostId.toString());
+  assert(postIndex >= 0, 'User has not reposted this post');
+
+  // Remove from userReposts
+  userRepostedPosts.splice(postIndex, 1);
+  userReposts.set(userAddress, userRepostedPosts);
+
+  // Remove from postRepostsMap
+  let repostIds = postRepostsMap.get(originalPostId, new Array<string>());
+  let repostIdToRemove: string | null = null;
+  for (let i = 0; i < repostIds.length; i++) {
+    let repostId = repostIds[i];
+    let repost = repostsMap.get(repostId, new Repost());
+    if (repost.reposter.toString() == userAddress) {
+      repostIdToRemove = repostId;
+      break;
+    }
+  }
+  assert(repostIdToRemove != null, 'Repost not found');
+
+  // Remove from repostIds array
+  let index = repostIds.indexOf(repostIdToRemove!);
+  if (index >= 0) {
+    repostIds.splice(index, 1);
+    postRepostsMap.set(originalPostId, repostIds);
+  }
+
+  // Delete the repost from repostsMap
+  repostsMap.delete(repostIdToRemove!);
+
+  generateEvent(
+    createEvent('PostUnreposted', [
+      repostIdToRemove!,
+      originalPostId.toString(),
+      userAddress,
+      timestamp().toString(),
+    ]),
+  );
+}
+
+export function getUserReposts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  let repostedPostIds = userReposts.get(userAddress, new Array<string>());
+  let repostedPosts: Post[] = [];
+  for (let i = 0; i < repostedPostIds.length; i++) {
+    const postId = repostedPostIds[i];
+    const post = postMap.get(postId.toString(), new Post());
+    repostedPosts.push(post);
+  }
+
+  return new Args().addSerializableObjectArray<Post>(repostedPosts).serialize();
+}
+
+function _getLikeKey(postId: u64, userAddress: string): string {
+  return 'like::' + postId.toString() + '::' + userAddress;
 }
