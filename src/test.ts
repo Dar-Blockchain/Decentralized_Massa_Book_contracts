@@ -7,14 +7,17 @@ import {
 } from '@massalabs/massa-web3';
 import {
   addPost,
+  addPostComment,
   deletePost,
   getPostById,
+  getPostComments,
   getPostLikedUsers,
   getPosts,
   getUserLikedPosts,
   getuserPosts,
   getUserProfile,
   likePost,
+  removeComment,
   repostPost,
   unlikePost,
   updateUserProfile,
@@ -120,10 +123,28 @@ async function testLikePost() {
   await getUserLikedPosts(contract2, account2.address.toString());
 }
 
+async function testComment() {
+  await addPost(contract, 'hello world');
+  await getPosts(contract);
+  // add comment to post
+  await addPostComment(contract2, 1n, 'hello comment 1 ');
+  // get post comments
+  await getPostComments(contract, 1n);
+  // reply to comment
+  await addPostComment(contract, 1n, 'reply to comment 1 text', 1n);
+  // get post comments
+  await getPostComments(contract, 1n);
+  // delete comment
+  await removeComment(contract2, 1n);
+  // get post comments
+  await getPostComments(contract, 1n);
+}
+
 await testProfile();
 // await testPost();
 // await testRepost();
-await testLikePost();
+// await testLikePost();
+await testComment();
 
 console.log('All the smart conract Events :');
 

@@ -14,6 +14,7 @@ import {
 } from '@massalabs/massa-web3';
 import { Profile } from './structs/profile';
 import { Post } from './structs/post';
+import { Comment } from './structs/comment';
 
 export async function getUserProfile(contract: SmartContract, address: string) {
   const args = new Args().addString(address);
@@ -225,4 +226,71 @@ export async function getPostLikedUsers(
   );
 
   console.log(`Post ${postId} liked users :`, deserializedUsers);
+}
+
+export async function addPostComment(
+  contract: SmartContract,
+  postId: bigint,
+  text: string,
+  parentCommentId?: bigint,
+) {
+  console.log(`Adding comment to post ${postId}`);
+
+  const args = new Args().addU64(postId).addString(text);
+
+  if (parentCommentId && parentCommentId > 0n) {
+    args.addU64(parentCommentId);
+  }
+
+  const operation = await contract.call('addPostComment', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Comment added successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getPostComments(contract: SmartContract, postId: bigint) {
+  console.log(`Getting post ${postId} comments`);
+
+  const result = await contract.read(
+    'getPostComments',
+    new Args().addU64(postId).serialize(),
+  );
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log(`Post ${postId} comments :`, deserializedComments);
+}
+
+export async function removeComment(
+  contract: SmartContract,
+  commentId: bigint,
+) {
+  console.log(`Removing comment ${commentId}`);
+
+  const args = new Args().addU64(commentId);
+
+  const operation = await contract.call('removeComment', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Comment removed successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
 }

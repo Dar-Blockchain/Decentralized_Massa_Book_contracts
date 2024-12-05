@@ -4,15 +4,17 @@ import { Address } from '@massalabs/massa-as-sdk';
 export class Comment implements Serializable {
   constructor(
     public id: u64 = 0,
+    public postId: u64 = 0,
     public commenter: Address = new Address(''),
     public text: string = '',
     public createdAt: u64 = 0,
-    public parentId: u64 = U64.MAX_VALUE, // New field for parent comment ID
+    public parentId: u64 = 0, // New field for parent comment ID
   ) {}
 
   serialize(): StaticArray<u8> {
     const args = new Args()
       .add(this.id)
+      .add(this.postId)
       .add(this.commenter)
       .add(this.text)
       .add(this.createdAt)
@@ -24,6 +26,7 @@ export class Comment implements Serializable {
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
     this.id = args.nextU64().expect('Failed to deserialize id');
+    this.postId = args.nextU64().expect('Failed to deserialize postId');
     this.commenter = new Address(
       args.nextString().expect('Failed to deserialize commenter'),
     );

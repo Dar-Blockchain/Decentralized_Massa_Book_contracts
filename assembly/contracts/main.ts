@@ -426,7 +426,7 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
 
   const commentId = u64.parse(Storage.get(COMMENT_ID_KEY));
 
-  let parentId: u64 = U64.MAX_VALUE;
+  let parentId: u64 = u64(0);
 
   if (!parentCommentIdOpt.isErr()) {
     const parentCommentId = parentCommentIdOpt.unwrap();
@@ -434,34 +434,29 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
     parentId = parentCommentId;
   }
 
-  const comment = new Comment(commentId, caller(), text, timestamp(), parentId);
+  const comment = new Comment(
+    commentId,
+    postId,
+    caller(),
+    text,
+    timestamp(),
+    parentId,
+  );
 
   // Store the comment
   commentsMap.set(commentId, comment);
-
-  if (parentId === u64.MAX_VALUE) {
-    // Top-level comment on a post
-    let postComments = postCommentsMap.get(postId, new Array<string>());
-    postComments.push(commentId.toString());
-    postCommentsMap.set(postId, postComments);
-  } else {
-    // Reply to a comment
-    let commentReplies = commentRepliesMap.get(parentId, new Array<string>());
-    commentReplies.push(commentId.toString());
-    commentRepliesMap.set(parentId, commentReplies);
-  }
 
   // Increment the COMMENT_ID_KEY
   Storage.set(COMMENT_ID_KEY, (commentId + 1).toString());
 
   generateEvent(
-    createEvent('CommentAdded', [
+    createEvent('AddComment', [
       postId.toString(),
       commentId.toString(),
       caller().toString(),
       text,
       comment.createdAt.toString(),
-      parentId !== null ? parentId.toString() : 'null',
+      parentId > u64(0) ? parentId.toString() : 'null',
     ]),
   );
 }
@@ -472,13 +467,16 @@ export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
   assert(postMap.contains(postId.toString()), 'Post not found');
 
-  const commentIds = postCommentsMap.get(postId, new Array<string>());
+  const lastCommentId = u64.parse(Storage.get(COMMENT_ID_KEY));
+
   let commentsArray: Comment[] = [];
 
-  for (let i = 0; i < commentIds.length; i++) {
-    const commentId = commentIds[i];
-    const comment = commentsMap.get(u64.parse(commentId), new Comment());
-    commentsArray.push(comment);
+  for (let i = u64(0); i < lastCommentId; i++) {
+    const commentId = i;
+    const comment = commentsMap.get(commentId, new Comment());
+    if (comment.postId === postId) {
+      commentsArray.push(comment);
+    }
   }
 
   return new Args()
@@ -494,17 +492,52 @@ export function getCommentReplies(
 
   assert(commentsMap.contains(commentId), 'Comment not found');
 
-  const replyIds = commentRepliesMap.get(commentId, new Array<string>());
+  const lastCommentId = u64.parse(Storage.get(COMMENT_ID_KEY));
   let repliesArray: Comment[] = [];
 
-  for (let i = 0; i < replyIds.length; i++) {
-    const replyId = replyIds[i];
-    const reply = commentsMap.get(u64.parse(replyId), new Comment());
-    repliesArray.push(reply);
+  for (let i = u64(0); i < lastCommentId; i++) {
+    const comment = commentsMap.get(i, new Comment());
+    if (comment.parentId === commentId) {
+      repliesArray.push(comment);
+    }
   }
 
   return new Args()
     .addSerializableObjectArray<Comment>(repliesArray)
+    .serialize();
+}
+
+export function removeComment(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const commentId = args.nextU64().unwrap();
+
+  assert(commentsMap.contains(commentId), 'Comment not found');
+
+  const comment = commentsMap.get(commentId, new Comment());
+
+  assert(
+    comment.commenter.toString() == caller().toString() ||
+      comment.commenter.toString() == Storage.get(OWNER_KEY),
+    'Caller has no permission to delete this comment',
+  );
+
+  // Delete the comment
+  commentsMap.delete(commentId);
+}
+
+export function getAllComments(): StaticArray<u8> {
+  const lastCommentId = u64.parse(Storage.get(COMMENT_ID_KEY));
+
+  let commentsArray: Comment[] = [];
+
+  for (let i = u64(0); i < lastCommentId; i++) {
+    const commentId = i;
+    const comment = commentsMap.get(commentId, new Comment());
+    commentsArray.push(comment);
+  }
+
+  return new Args()
+    .addSerializableObjectArray<Comment>(commentsArray)
     .serialize();
 }
 
