@@ -333,8 +333,88 @@ export function likePost(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('LikePost', [userAddress, postId.toString()]));
 }
 
-  
+export function unlikePost(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
 
+  const postId = args.nextU64().unwrap();
+  const userAddress = caller().toString();
+
+  const lastLikeId = u64.parse(Storage.get(LIKE_ID_KEY));
+
+  assert(postMap.contains(postId.toString()), 'Post not found');
+
+  // ensure user has liked the post
+  let alreadyLiked = false;
+
+  let likeId = u64(0);
+
+  for (let i = u64(START_LIKE_ID); i < lastLikeId; i++) {
+    const like = likesMap.get(i, new Like());
+
+    if (like.userAddress.toString() == userAddress && like.postId == postId) {
+      likeId = i;
+      alreadyLiked = true;
+      break;
+    }
+  }
+
+  assert(alreadyLiked, 'User has not liked this post');
+
+  // Unlike the post
+  likesMap.delete(likeId);
+
+  // generate an event
+  generateEvent(
+    createEvent('UnlikePost', [
+      likeId.toString(),
+      userAddress,
+      postId.toString(),
+    ]),
+  );
+}
+
+export function getUserLikedPosts(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  let likedPosts: Post[] = [];
+
+  const lastLikeId = u64.parse(Storage.get(LIKE_ID_KEY));
+
+  for (let i = u64(START_LIKE_ID); i < lastLikeId; i++) {
+    const like = likesMap.get(i, new Like());
+
+    if (like.userAddress.toString() == userAddress) {
+      const post = postMap.get(like.postId.toString(), new Post());
+      likedPosts.push(post);
+    }
+  }
+
+  return new Args().addSerializableObjectArray<Post>(likedPosts).serialize();
+}
+
+export function getPostLikedUsers(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const postId = args.nextU64().unwrap();
+
+  const lastLikeId = u64.parse(Storage.get(LIKE_ID_KEY));
+
+  let likedUsers: String[] = [];
+
+  for (let i = u64(START_LIKE_ID); i < lastLikeId; i++) {
+    const like = likesMap.get(i, new Like());
+
+    if (like.postId == postId) {
+      likedUsers.push(like.userAddress.toString());
+    }
+  }
+
+  return new Args().add(likedUsers).serialize();
+}
 
 export function addPostComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);

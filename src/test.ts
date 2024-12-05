@@ -9,10 +9,14 @@ import {
   addPost,
   deletePost,
   getPostById,
+  getPostLikedUsers,
   getPosts,
+  getUserLikedPosts,
   getuserPosts,
   getUserProfile,
+  likePost,
   repostPost,
+  unlikePost,
   updateUserProfile,
 } from './test/contractFunc';
 import { getScByteCode } from './utils';
@@ -97,9 +101,29 @@ async function testRepost() {
   await getPosts(contract);
 }
 
+async function testLikePost() {
+  // add post to the contract
+  await addPost(contract, 'hello world');
+  // get posts from the contract
+  await getPosts(contract);
+  // add like by user 2
+  await likePost(contract2, 1n);
+  // get posts liked users from the contract
+  await getPostLikedUsers(contract, 1n);
+  //  get user liked posts
+  await getUserLikedPosts(contract2, account2.address.toString());
+  // delete a like
+  await unlikePost(contract2, 1n);
+  // get posts liked users from the contract
+  await getPostLikedUsers(contract, 1n);
+  //  get user liked posts
+  await getUserLikedPosts(contract2, account2.address.toString());
+}
+
 await testProfile();
 // await testPost();
-await testRepost();
+// await testRepost();
+await testLikePost();
 
 console.log('All the smart conract Events :');
 

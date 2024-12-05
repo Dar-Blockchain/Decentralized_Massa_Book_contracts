@@ -1,6 +1,7 @@
 import {
   Address,
   Args,
+  ArrayTypes,
   bytesToSerializableObjectArray,
   bytesToStr,
   DeserializedResult,
@@ -48,7 +49,7 @@ export async function updateUserProfile(
 
   // call smart contract
   const operation = await contract.call('updateProfile', args.serialize(), {
-    coins: Mas.fromString('0.02'),
+    coins: Mas.fromString('0.03'),
   });
 
   const operationStatus = await operation.waitFinalExecution();
@@ -149,4 +150,79 @@ export async function deletePost(contract: SmartContract, postId: bigint) {
     console.error('Operation failed with status:', operationStatus);
     return false;
   }
+}
+
+export async function likePost(contract: SmartContract, postId: bigint) {
+  console.log(`Liking post ${postId}`);
+
+  const args = new Args().addU64(postId);
+
+  const operation = await contract.call('likePost', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Post liked successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function unlikePost(contract: SmartContract, postId: bigint) {
+  console.log(`Unliking post ${postId}`);
+
+  const args = new Args().addU64(postId);
+  const operation = await contract.call('unlikePost', args.serialize(), {
+    coins: Mas.fromString('0.02'),
+  });
+
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Post unliked successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getUserLikedPosts(
+  contract: SmartContract,
+  userAddress: string,
+) {
+  console.log(`Getting user liked posts`);
+
+  const result = await contract.read(
+    'getUserLikedPosts',
+    new Args().addString(userAddress).serialize(),
+  );
+
+  const deserializedPosts = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Post>(Post);
+
+  console.log(`User ${userAddress} liked posts :`, deserializedPosts);
+}
+
+export async function getPostLikedUsers(
+  contract: SmartContract,
+  postId: bigint,
+) {
+  console.log(`Getting post ${postId} liked users`);
+
+  const result = await contract.read(
+    'getPostLikedUsers',
+    new Args().addU64(postId).serialize(),
+  );
+
+  const deserializedUsers = new Args(result.value).nextArray<string>(
+    ArrayTypes.STRING,
+  );
+
+  console.log(`Post ${postId} liked users :`, deserializedUsers);
 }
