@@ -37,6 +37,9 @@ const START_COMMENT_ID = 1;
  * This function is meant to be called only one time: when the contract is deployed.
  *
  * @param binaryArgs - Arguments serialized with Args
+ * @remarks
+ * This function initializes the owner, sets up storage keys, and emits a deployment event.
+ * It can only be called during the deployment phase.
  */
 export function constructor(binaryArgs: StaticArray<u8>): void {
   // If you remove this check, someone could call your constructor function and reset your smart contract.
@@ -56,9 +59,13 @@ export function constructor(binaryArgs: StaticArray<u8>): void {
 }
 
 /**
- * change the  contract owner.
- * @param binaryArgs - serialized strings representing the new owner.
- * @remarks This function is only callable by the collection owner.
+ * Transfers the ownership of the contract to a new owner.
+ * @param binaryArgs - Serialized arguments containing the new owner address.
+ *  Arguments:
+ *    - newOwner (string): Address of the new owner.
+ * @remarks
+ * This function can only be called by the current owner of the contract.
+ * It updates the owner in storage and emits an event for ownership transfer.
  */
 export function transferOwnership(binaryArgs: StaticArray<u8>): void {
   onlyOwner();
@@ -70,12 +77,15 @@ export function transferOwnership(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('TransferOwnership', [oldOwner, newOwner]));
 }
 
-export function _getProfile(address: Address): Profile {
-  const profile = profileMap.get(address.toString(), new Profile());
-
-  return profile;
-}
-
+/**
+ * Fetches the profile of a user as a serialized object.
+ * @param binaryArgs - Serialized arguments containing the user address.
+ *  Arguments:
+ *    - userAddress (string): Address of the user whose profile is being retrieved.
+ * @returns The serialized profile data.
+ * @remarks
+ * The returned profile can be deserialized for further usage.
+ */
 export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
 
@@ -86,6 +96,15 @@ export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   return profile.serialize();
 }
 
+/**
+ * Updates the profile of a user.
+ * @param binaryArgs - Serialized arguments containing the updated profile data.
+ *  Arguments:
+ *    - profile (Profile): The updated profile object.
+ * @remarks
+ * This function can only be called by the profile owner or the contract owner.
+ * It overwrites the existing profile in storage and emits an event for profile updates.
+ */
 export function updateProfile(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const profile = args.nextSerializable<Profile>().unwrap();
@@ -103,6 +122,16 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('UpdateProfile', [userAddress.toString()]));
 }
 
+/**
+ * Creates a new post in the contract.
+ * @param binaryArgs - Serialized arguments containing post details.
+ *  Arguments:
+ *    - text (string): The content of the post.
+ *    - image (string): An image URL for the post.
+ * @remarks
+ * The user must have an existing profile to create a post.
+ * The post ID is auto-incremented and stored in the contract's storage.
+ */
 export function createPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
@@ -137,6 +166,16 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+/**
+ * Updates an existing post in the contract.
+ * @param binaryArgs - Serialized arguments containing updated post details.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to update.
+ *    - text (string): The updated content of the post.
+ *    - image (string): The updated image URL for the post.
+ * @remarks
+ * Only the post author or contract owner can update a post.
+ */
 export function updatePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
@@ -164,6 +203,15 @@ export function updatePost(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('UpdatePost', [postId.toString(), text, image]));
 }
 
+/**
+ * Reposts an existing post.
+ * @param binaryArgs - Serialized arguments containing the original post ID.
+ *  Arguments:
+ *    - originalPostId (u64): The ID of the post to be reposted.
+ * @remarks
+ * This function creates a new post with `isRepost` set to `true`.
+ * A user cannot repost the same post more than once.
+ */
 export function repostPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const originalPostId = args.nextU64().unwrap();
@@ -210,6 +258,14 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+/**
+ * Deletes a post from the contract.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to be deleted.
+ * @remarks
+ * Only the post author or contract owner can delete a post.
+ */
 export function deletePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
@@ -231,6 +287,12 @@ export function deletePost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+/**
+ * Retrieves all posts in the contract.
+ * @returns Serialized array of all posts.
+ * @remarks
+ * This function fetches all posts from the storage map and serializes them for output.
+ */
 export function getPosts(): StaticArray<u8> {
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
   let posts: Post[] = [];
@@ -243,6 +305,15 @@ export function getPosts(): StaticArray<u8> {
   return new Args().addSerializableObjectArray<Post>(posts).serialize();
 }
 
+/**
+ * Retrieves all posts created by a specific user.
+ * @param binaryArgs - Serialized arguments containing the user address.
+ *  Arguments:
+ *    - userAddress (string): The address of the user.
+ * @returns Serialized array of the user's posts.
+ * @remarks
+ * Filters posts based on the author's address.
+ */
 export function getUserPosts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
 
@@ -263,6 +334,15 @@ export function getUserPosts(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   return new Args().addSerializableObjectArray<Post>(posts).serialize();
 }
 
+/**
+ * Fetches the details of a specific post by its ID.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to retrieve.
+ * @returns Serialized data of the requested post.
+ * @remarks
+ * Throws an error if the post does not exist.
+ */
 export function getPost(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
 
@@ -276,6 +356,15 @@ export function getPost(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   return post.serialize();
 }
 
+/**
+ * Retrieves all reposted posts for a specific user as a serialized object.
+ * @param binaryArgs - Serialized arguments containing the user address.
+ *  Arguments:
+ *    - userAddress (string): The address of the user whose reposted posts are to be fetched.
+ * @returns A serialized array of reposted posts by the user.
+ * @remarks
+ * Uses the `_getUserRepostedPosts` helper to fetch the reposted posts and serializes them for output.
+ */
 export function getUserRepostedPosts(
   binaryArgs: StaticArray<u8>,
 ): StaticArray<u8> {
@@ -289,6 +378,15 @@ export function getUserRepostedPosts(
     .serialize();
 }
 
+/**
+ * Likes a specific post.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to like.
+ * @remarks
+ * A user can only like a post once.
+ * Emits an event when the post is successfully liked.
+ */
 export function likePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
@@ -329,6 +427,15 @@ export function likePost(binaryArgs: StaticArray<u8>): void {
   generateEvent(createEvent('LikePost', [userAddress, postId.toString()]));
 }
 
+/**
+ * Unlikes a previously liked post.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to unlike.
+ * @remarks
+ * A user must have previously liked the post to unlike it.
+ * Emits an event when the post is successfully unliked.
+ */
 export function unlikePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
@@ -369,6 +476,15 @@ export function unlikePost(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+/**
+ * Retrieves all posts liked by a specific user.
+ * @param binaryArgs - Serialized arguments containing the user's address.
+ *  Arguments:
+ *    - userAddress (string): The address of the user whose liked posts are to be fetched.
+ * @returns A serialized array of posts liked by the user.
+ * @remarks
+ * Filters likes based on the user's address and retrieves the corresponding posts.
+ */
 export function getUserLikedPosts(
   binaryArgs: StaticArray<u8>,
 ): StaticArray<u8> {
@@ -391,6 +507,15 @@ export function getUserLikedPosts(
   return new Args().addSerializableObjectArray<Post>(likedPosts).serialize();
 }
 
+/**
+ * Retrieves all users who liked a specific post.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post.
+ * @returns A serialized array of user addresses.
+ * @remarks
+ * Iterates through likes to find users associated with the post ID.
+ */
 export function getPostLikedUsers(
   binaryArgs: StaticArray<u8>,
 ): StaticArray<u8> {
@@ -412,6 +537,16 @@ export function getPostLikedUsers(
   return new Args().add(likedUsers).serialize();
 }
 
+/**
+ * Adds a comment to a post.
+ * @param binaryArgs - Serialized arguments containing comment details.
+ *  Arguments:
+ *    - postId (u64): The ID of the post to comment on.
+ *    - text (string): The content of the comment.
+ *    - parentCommentId (u64, optional): The ID of the parent comment for replies.
+ * @remarks
+ * This function supports nested comments by allowing optional parent comment IDs.
+ */
 export function addPostComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
@@ -457,6 +592,15 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
   );
 }
 
+/**
+ * Retrieves all comments for a specific post.
+ * @param binaryArgs - Serialized arguments containing the post ID.
+ *  Arguments:
+ *    - postId (u64): The ID of the post.
+ * @returns Serialized array of comments for the post.
+ * @remarks
+ * Filters comments based on the associated post ID.
+ */
 export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
@@ -480,6 +624,15 @@ export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
     .serialize();
 }
 
+/**
+ * Retrieves all replies to a specific comment.
+ * @param binaryArgs - Serialized arguments containing the comment ID.
+ *  Arguments:
+ *    - commentId (u64): The ID of the parent comment.
+ * @returns A serialized array of replies.
+ * @remarks
+ * Filters comments based on the parent comment ID.
+ */
 export function getCommentReplies(
   binaryArgs: StaticArray<u8>,
 ): StaticArray<u8> {
@@ -503,6 +656,14 @@ export function getCommentReplies(
     .serialize();
 }
 
+/**
+ * Deletes a comment.
+ * @param binaryArgs - Serialized arguments containing the comment ID.
+ *  Arguments:
+ *    - commentId (u64): The ID of the comment to delete.
+ * @remarks
+ * Only the comment author or the contract owner can delete a comment.
+ */
 export function removeComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const commentId = args.nextU64().unwrap();
@@ -521,6 +682,12 @@ export function removeComment(binaryArgs: StaticArray<u8>): void {
   commentsMap.delete(commentId);
 }
 
+/**
+ * Retrieves all comments stored in the contract.
+ * @returns A serialized array of all comments.
+ * @remarks
+ * This function iterates through all stored comments and serializes them for output.
+ */
 export function getAllComments(): StaticArray<u8> {
   const lastCommentId = u64.parse(Storage.get(COMMENT_ID_KEY));
 
@@ -537,6 +704,14 @@ export function getAllComments(): StaticArray<u8> {
     .serialize();
 }
 
+/**
+ * Retrieves all reposted posts by a specific user.
+ * @param userAddress - The address of the user whose reposted posts are to be fetched.
+ * @returns An array of `Post` objects that the user has reposted.
+ * @remarks
+ * This is a helper function that filters reposted posts by the user address.
+ * It checks if the post has `isRepost` set to `true` and if the `repostedPostId` is valid.
+ */
 function _getUserRepostedPosts(userAddress: string): Post[] {
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
 
@@ -556,6 +731,14 @@ function _getUserRepostedPosts(userAddress: string): Post[] {
   return repostedPosts;
 }
 
+/**
+ * Retrieves the IDs of all posts reposted by a specific user.
+ * @param userAddress - The address of the user whose reposted post IDs are to be fetched.
+ * @returns An array of `u64` IDs representing the posts the user has reposted.
+ * @remarks
+ * This is a helper function that extracts reposted post IDs by checking if the post
+ * has `isRepost` set to `true` and a valid `repostedPostId`.
+ */
 function _getUserRepostedPostsIds(userAddress: string): u64[] {
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
 
@@ -573,4 +756,17 @@ function _getUserRepostedPostsIds(userAddress: string): u64[] {
   }
 
   return repostedPosts;
+}
+/**
+ * Fetches the profile associated with a specific address.
+ * @param address - The address of the user to retrieve the profile for.
+ * @returns A `Profile` object containing the user's details.
+ * @remarks
+ * This is an internal helper function used to fetch profiles from the `profileMap` storage.
+ * If no profile is found, a default `Profile` object is returned.
+ */
+function _getProfile(address: Address): Profile {
+  const profile = profileMap.get(address.toString(), new Profile());
+
+  return profile;
 }
