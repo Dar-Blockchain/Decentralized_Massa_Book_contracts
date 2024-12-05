@@ -1,60 +1,247 @@
-# My Massa Smart-contract Project
+# Social Media Smart Contract for Massa Blockchain
 
-## Build
+This smart contract implements a decentralized social media platform on the Massa blockchain. It allows users to manage profiles, create and interact with posts, and leave comments, all while leveraging the blockchain's transparency and immutability.
 
-By default this will build all files in `assembly/contracts` directory.
+---
 
-```shell
-npm run build
+## Table of Contents
+
+- [Features](#features)
+- [Smart Contract Functions](#smart-contract-functions)
+  - [Constructor](#constructor)
+  - [Ownership Management](#ownership-management)
+  - [Profile Management](#profile-management)
+  - [Post Management](#post-management)
+  - [Like Management](#like-management)
+  - [Comment Management](#comment-management)
+- [Persistent Storage](#persistent-storage)
+- [Setup and Deployment](#setup-and-deployment)
+- [Event Structure](#event-structure)
+- [License](#license)
+
+---
+
+## Features
+
+- **Decentralized Profile Management**: Users can create and manage their profiles securely.
+- **Post Creation and Interaction**: Users can create posts, edit, delete, or repost content.
+- **Liking System**: A robust like and unlike mechanism to interact with posts.
+- **Commenting System**: Nested comments for posts with support for replies.
+- **Ownership Control**: Secure and seamless transfer of contract ownership.
+
+---
+
+## Smart Contract Functions
+
+### Constructor
+
+```typescript
+export function constructor(binaryArgs: StaticArray<u8>): void;
 ```
 
-## Deploy a smart contract
+- **Purpose**: Initializes the contract. Sets the initial owner and prepares the storage for posts, likes, and comments.
+- **Arguments**:
+  - `admin (string)`: Address of the contract owner.
 
-Prerequisites :
+---
 
-- You must add a `.env` file at the root of the repository with the following keys set to valid values :
-  - WALLET_SECRET_KEY="wallet_secret_key"
-  - JSON_RPC_URL_PUBLIC=<https://test.massa.net/api/v2:33035>
+### Ownership Management
 
-These keys will be the ones used by the deployer script to interact with the blockchain.
+#### `transferOwnership`
 
-The following command will build contracts in `assembly/contracts` directory and execute the deployment script
-`src/deploy.ts`. This script will deploy on the node specified in the `.env` file.
-
-```shell
-npm run deploy
+```typescript
+export function transferOwnership(binaryArgs: StaticArray<u8>): void;
 ```
 
-You can modify `src/deploy.ts` to change the smart contract being deployed, and to pass arguments to the constructor
-function:
+- **Purpose**: Transfers contract ownership to a new owner.
+- **Arguments**:
+  - `newOwner (string)`: Address of the new owner.
+- **Remarks**: Only callable by the current owner.
 
-- line 31: specify what contract you want to deploy
-- line 33: create the `Args` object to pass to the constructor of the contract you want to deploy
+---
 
-When the deployment operation is executed on-chain, the
-[constructor](https://github.com/massalabs/massa-sc-toolkit/blob/main/packages/sc-project-initializer/commands/init/assembly/contracts/main.ts#L10)
-function of the smart contract being deployed will
-be called with the arguments provided in the deployment script.
+### Profile Management
 
-The deployment script uses [massa-sc-deployer library](https://www.npmjs.com/package/@massalabs/massa-sc-deployer)
-to deploy smart contracts.
+#### `getProfile`
 
-You can edit this script and use [massa-web3 library](https://www.npmjs.com/package/@massalabs/massa-web3)
-to create advanced deployment procedure.
-
-For more information, please visit our ReadTheDocs about
-[Massa smart-contract development](https://docs.massa.net/en/latest/web3-dev/smart-contracts.html).
-
-## Unit tests
-
-The test framework documentation is available here: [as-pect docs](https://as-pect.gitbook.io/as-pect)
-
-```shell
-npm run test
+```typescript
+export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8>;
 ```
 
-## Format code
+- **Purpose**: Fetches a user's profile.
+- **Arguments**:
+  - `userAddress (string)`: Address of the user.
+- **Returns**: Serialized `Profile` object.
 
-```shell
-npm run fmt
+#### `updateProfile`
+
+```typescript
+export function updateProfile(binaryArgs: StaticArray<u8>): void;
 ```
+
+- **Purpose**: Updates the profile of a user.
+- **Arguments**:
+  - `profile (Profile)`: Updated profile object.
+- **Remarks**: Only callable by the profile owner or contract owner.
+
+---
+
+### Post Management
+
+#### `createPost`
+
+```typescript
+export function createPost(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Creates a new post.
+- **Arguments**:
+  - `text (string)`: Content of the post.
+  - `image (string)`: Image URL for the post.
+- **Remarks**: Requires an existing profile.
+
+#### `updatePost`
+
+```typescript
+export function updatePost(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Updates an existing post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post.
+  - `text (string)`: Updated content.
+  - `image (string)`: Updated image URL.
+
+#### `deletePost`
+
+```typescript
+export function deletePost(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Deletes a post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post to delete.
+
+#### `getPosts`
+
+```typescript
+export function getPosts(): StaticArray<u8>;
+```
+
+- **Purpose**: Fetches all posts.
+- **Returns**: Serialized array of posts.
+
+#### `getPost`
+
+```typescript
+export function getPost(binaryArgs: StaticArray<u8>): StaticArray<u8>;
+```
+
+- **Purpose**: Fetches a specific post by ID.
+- **Arguments**:
+  - `postId (u64)`: ID of the post.
+- **Returns**: Serialized post object.
+
+---
+
+### Like Management
+
+#### `likePost`
+
+```typescript
+export function likePost(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Likes a post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post to like.
+
+#### `unlikePost`
+
+```typescript
+export function unlikePost(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Removes a like from a post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post to unlike.
+
+---
+
+### Comment Management
+
+#### `addPostComment`
+
+```typescript
+export function addPostComment(binaryArgs: StaticArray<u8>): void;
+```
+
+- **Purpose**: Adds a comment to a post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post to comment on.
+  - `text (string)`: Comment content.
+  - `parentCommentId (u64, optional)`: ID of the parent comment (for replies).
+
+#### `getPostComments`
+
+```typescript
+export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8>;
+```
+
+- **Purpose**: Fetches all comments for a post.
+- **Arguments**:
+  - `postId (u64)`: ID of the post.
+- **Returns**: Serialized array of comments.
+
+---
+
+## Persistent Storage
+
+This contract uses `PersistentMap` for efficient storage and retrieval of data:
+
+- **Keys**:
+  - `POST_ID_KEY`: Tracks the next available post ID.
+  - `LIKE_ID_KEY`: Tracks the next available like ID.
+  - `COMMENT_ID_KEY`: Tracks the next available comment ID.
+- **Maps**:
+  - `profileMap`: Stores user profiles, mapped by user addresses.
+  - `postMap`: Stores posts, mapped by post IDs.
+  - `likesMap`: Stores likes, mapped by like IDs.
+  - `commentsMap`: Stores comments, mapped by comment IDs.
+
+---
+
+## Setup and Deployment
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Compile the contract:
+   ```bash
+   npm run build
+   ```
+3. Deploy the contract to the Massa blockchain:
+   ```bash
+    npm run deploy
+   ```
+4. Interact with the contract using the Massa SDK.
+
+---
+
+## Event Structure
+
+The contract generates events to provide insights into user interactions. Key events include:
+
+- `ContractDeployed`: Triggered when the contract is successfully deployed.
+- `TransferOwnership`: Emitted when ownership is transferred.
+- `CreatePost`: Triggered when a post is created.
+- `UpdatePost`: Emitted when a post is updated.
+- `AddComment`: Triggered when a comment is added to a post.
+- `LikePost`: Emitted when a post is liked.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
