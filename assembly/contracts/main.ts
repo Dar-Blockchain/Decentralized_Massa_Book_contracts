@@ -18,19 +18,15 @@ import { onlyOwner, setOwner } from './utils/ownership';
 import { Profile } from '../structs/profile';
 import {
   COMMENT_ID_KEY,
-  commentRepliesMap,
   commentsMap,
   LIKE_ID_KEY,
   likesMap,
   POST_ID_KEY,
-  postCommentsMap,
   postMap,
-  profileKey,
-  REPOST_ID_KEY,
+  profileMap,
 } from './storage';
 import { Post } from '../structs/post';
 import { Comment } from '../structs/comment';
-import { Repost } from '../structs/repost';
 import { Like } from '../structs/like';
 
 const START_POST_ID = 1;
@@ -75,7 +71,7 @@ export function transferOwnership(binaryArgs: StaticArray<u8>): void {
 }
 
 export function _getProfile(address: Address): Profile {
-  const profile = profileKey.get(address.toString(), new Profile());
+  const profile = profileMap.get(address.toString(), new Profile());
 
   return profile;
 }
@@ -102,7 +98,7 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
     'Caller does not have permission to update this profile',
   );
 
-  profileKey.set(userAddress.toString(), profile);
+  profileMap.set(userAddress.toString(), profile);
 
   generateEvent(createEvent('UpdateProfile', [userAddress.toString()]));
 }
