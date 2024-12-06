@@ -15,6 +15,7 @@ import {
 import { Profile } from './structs/profile';
 import { Post } from './structs/post';
 import { Comment } from './structs/comment';
+import { Follow } from './structs/follow';
 
 export async function getUserProfile(contract: SmartContract, address: string) {
   const args = new Args().addString(address);
@@ -39,18 +40,14 @@ export async function updateUserProfile(
   name: string,
 ) {
   console.log('Updating the profile of the user :', address);
-  const newProfile = new Profile(
-    address,
-    name,
-    'https://www.google.com',
-    'Junior full stack dev',
-  );
+
+  const newProfile = new Profile(address, name, '', 'Junior full stack dev');
 
   const args = new Args().addSerializable(newProfile);
 
   // call smart contract
   const operation = await contract.call('updateProfile', args.serialize(), {
-    coins: Mas.fromString('0.03'),
+    coins: Mas.fromString('0.6'),
   });
 
   const operationStatus = await operation.waitFinalExecution();
@@ -293,4 +290,76 @@ export async function removeComment(
     console.error('Operation failed with status:', operationStatus);
     return false;
   }
+}
+
+export async function followUser(contract: SmartContract, userAddress: string) {
+  const operation = await contract.call(
+    'followProfile',
+    new Args().addString(userAddress).serialize(),
+    {
+      coins: Mas.fromString('0.02'),
+    },
+  );
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('User followed successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function unfollowUser(
+  contract: SmartContract,
+  userAddress: string,
+) {
+  const operation = await contract.call(
+    'unfollowProfile',
+    new Args().addString(userAddress).serialize(),
+    {
+      coins: Mas.fromString('0.02'),
+    },
+  );
+  const operationStatus = await operation.waitFinalExecution();
+
+  if (operationStatus === OperationStatus.Success) {
+    console.log('User unfollowed successfully');
+    return true;
+  } else {
+    console.error('Operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getUserFollowers(
+  contract: SmartContract,
+  userAddress: string,
+) {
+  const result = await contract.read(
+    'getAllUserFollowers',
+    new Args().addString(userAddress).serialize(),
+  );
+  const deserializedUsers = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Follow>(Follow);
+
+  console.log(`User ${userAddress} followers :`, deserializedUsers);
+}
+
+export async function getUserFollowings(
+  contract: SmartContract,
+  userAddress: string,
+) {
+  const result = await contract.read(
+    'getAllUserFollowings',
+    new Args().addString(userAddress).serialize(),
+  );
+
+  const deserializedUsers = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Follow>(Follow);
+
+  console.log(`User ${userAddress} followings :`, deserializedUsers);
 }

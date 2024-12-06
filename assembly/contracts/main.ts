@@ -17,21 +17,27 @@ import { _setOwner, OWNER_KEY } from './utils/ownership-internal';
 import { onlyOwner, setOwner } from './utils/ownership';
 import { Profile } from '../structs/profile';
 import {
+  _builduserFollowsKey,
   COMMENT_ID_KEY,
   commentsMap,
+  FOLLOW_ID_KEY,
+  followsMap,
   LIKE_ID_KEY,
   likesMap,
   POST_ID_KEY,
   postMap,
   profileMap,
+  usersFollowsMap,
 } from './storage';
 import { Post } from '../structs/post';
 import { Comment } from '../structs/comment';
 import { Like } from '../structs/like';
+import { Follow } from '../structs/follow';
 
 const START_POST_ID = 1;
 const START_LIKE_ID = 1;
 const START_COMMENT_ID = 1;
+const START_FOLLOW_ID = 1;
 
 /**
  * This function is meant to be called only one time: when the contract is deployed.
@@ -53,6 +59,7 @@ export function constructor(binaryArgs: StaticArray<u8>): void {
   Storage.set(POST_ID_KEY, START_POST_ID.toString());
   Storage.set(LIKE_ID_KEY, START_LIKE_ID.toString());
   Storage.set(COMMENT_ID_KEY, START_COMMENT_ID.toString());
+  Storage.set(FOLLOW_ID_KEY, START_FOLLOW_ID.toString());
 
   // generate the event for the contract  deployment
   generateEvent(createEvent('ContractDeployed', [admin]));
@@ -120,6 +127,133 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
   profileMap.set(userAddress.toString(), profile);
 
   generateEvent(createEvent('UpdateProfile', [userAddress.toString()]));
+}
+
+export function followProfile(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  assert(
+    caller().toString() == userAddress.toString() ||
+      caller().toString() == Storage.get(OWNER_KEY),
+    'Caller does not have permission.',
+  );
+
+  const profile = profileMap.get(userAddress.toString(), new Profile());
+
+  assert(
+    profile.address.toString() == userAddress.toString(),
+    'Profile does not exist.',
+  );
+
+  const lastFollowId = u64.parse(Storage.get(FOLLOW_ID_KEY));
+
+  const usersFollowsKey = _builduserFollowsKey(
+    caller().toString(),
+    userAddress,
+  );
+
+  // check if the user is already following the profile
+  const usersFollowsId = usersFollowsMap.get(usersFollowsKey, u64(0));
+
+  const isFollowing = usersFollowsId > u64(0);
+
+  assert(!isFollowing, 'User is already following this profile.');
+
+  // create a new follow entry
+  const follow = new Follow(
+    lastFollowId,
+    caller(),
+    new Address(userAddress),
+    timestamp(),
+  );
+
+  // add the follow entry to the map
+  followsMap.set(lastFollowId, follow);
+
+  usersFollowsMap.set(usersFollowsKey, lastFollowId);
+
+  // update the last follow ID
+  Storage.set(FOLLOW_ID_KEY, (lastFollowId + 1).toString());
+
+  // emit the follow event
+  generateEvent(
+    createEvent('FollowProfile', [
+      follow.follower.toString(),
+      follow.followed.toString(),
+      follow.createdAt.toString(),
+    ]),
+  );
+}
+
+export function unfollowProfile(binaryArgs: StaticArray<u8>): void {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  const usersFollowsKey = _builduserFollowsKey(
+    caller().toString(),
+    userAddress,
+  );
+
+  // check if the user is following the profile
+  const userFollowsId = usersFollowsMap.get(usersFollowsKey, u64(0));
+
+  const isFollowing = userFollowsId > u64(0);
+
+  assert(isFollowing, 'User is not following this profile.');
+
+  // delete the follow entry from the map
+  usersFollowsMap.delete(usersFollowsKey);
+  followsMap.delete(userFollowsId);
+
+  // emit the unfollow event
+  generateEvent(
+    createEvent('UnfollowProfile', [
+      caller().toString(),
+      userAddress,
+      timestamp().toString(),
+    ]),
+  );
+}
+
+export function getAllUserFollowers(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  const lastFollowId = u64.parse(Storage.get(FOLLOW_ID_KEY));
+
+  let followers: Follow[] = [];
+
+  for (let i = u64(START_FOLLOW_ID); i < lastFollowId; i++) {
+    const follow = followsMap.get(i, new Follow());
+    if (follow.followed.toString() == userAddress) {
+      followers.push(follow);
+    }
+  }
+
+  return new Args().addSerializableObjectArray<Follow>(followers).serialize();
+}
+
+export function getAllUserFollowings(
+  binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().unwrap();
+
+  const lastFollowId = u64.parse(Storage.get(FOLLOW_ID_KEY));
+
+  let followings: Follow[] = [];
+
+  for (let i = u64(START_FOLLOW_ID); i < lastFollowId; i++) {
+    const follow = followsMap.get(i, new Follow());
+    if (follow.follower.toString() == userAddress) {
+      followings.push(follow);
+    }
+  }
+
+  return new Args().addSerializableObjectArray<Follow>(followings).serialize();
 }
 
 /**

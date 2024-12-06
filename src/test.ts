@@ -9,16 +9,20 @@ import {
   addPost,
   addPostComment,
   deletePost,
+  followUser,
   getPostById,
   getPostComments,
   getPostLikedUsers,
   getPosts,
+  getUserFollowers,
+  getUserFollowings,
   getUserLikedPosts,
   getuserPosts,
   getUserProfile,
   likePost,
   removeComment,
   repostPost,
+  unfollowUser,
   unlikePost,
   updateUserProfile,
 } from './test/contractFunc';
@@ -39,7 +43,7 @@ const contract = await SmartContract.deploy(
   provider,
   byteCode,
   constructorArgs,
-  { coins: Mas.fromString('0.01') },
+  { coins: Mas.fromString('5') },
 );
 
 const contract2 = new SmartContract(provider2, contract.address);
@@ -123,28 +127,44 @@ async function testLikePost() {
   await getUserLikedPosts(contract2, account2.address.toString());
 }
 
-async function testComment() {
-  await addPost(contract, 'hello world');
-  await getPosts(contract);
-  // add comment to post
-  await addPostComment(contract2, 1n, 'hello comment 1 ');
-  // get post comments
-  await getPostComments(contract, 1n);
-  // reply to comment
-  await addPostComment(contract, 1n, 'reply to comment 1 text', 1n);
-  // get post comments
-  await getPostComments(contract, 1n);
-  // delete comment
-  await removeComment(contract2, 1n);
-  // get post comments
-  await getPostComments(contract, 1n);
+// async function testComment() {
+//   await addPost(contract, 'hello world');
+//   await getPosts(contract);
+//   // add comment to post
+//   await addPostComment(contract2, 1n, 'hello comment 1 ');
+//   // get post comments
+//   await getPostComments(contract, 1n);
+//   // reply to comment
+//   await addPostComment(contract, 1n, 'reply to comment 1 text', 1n);
+//   // get post comments
+//   await getPostComments(contract, 1n);
+//   // delete comment
+//   await removeComment(contract2, 1n);
+//   // get post comments
+//   await getPostComments(contract, 1n);
+// }
+
+async function testFollow() {
+  // follow user 2
+  await followUser(contract, account2.address.toString());
+  // get user followers
+  await getUserFollowers(contract, account2.address.toString());
+  // get user followings
+  await getUserFollowings(contract, account.address.toString());
+  // unfollow user 2
+  await unfollowUser(contract, account2.address.toString());
+  // get user followers
+  await getUserFollowers(contract, account2.address.toString());
+  // get user followings
+  await getUserFollowings(contract, account.address.toString());
 }
 
 await testProfile();
 // await testPost();
 // await testRepost();
 // await testLikePost();
-await testComment();
+// await testComment();
+await testFollow();
 
 console.log('All the smart conract Events :');
 
