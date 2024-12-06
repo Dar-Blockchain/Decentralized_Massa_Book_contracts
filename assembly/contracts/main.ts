@@ -98,7 +98,7 @@ export function getProfile(binaryArgs: StaticArray<u8>): StaticArray<u8> {
 
   const userAddress = args.nextString().unwrap();
 
-  const profile = _getProfile(new Address(userAddress));
+  const profile = profileMap.get(userAddress, new Profile());
 
   return profile.serialize();
 }
@@ -134,8 +134,7 @@ export function followProfile(binaryArgs: StaticArray<u8>): void {
   const userAddress = args.nextString().unwrap();
 
   assert(
-    caller().toString() == userAddress.toString() ||
-      caller().toString() == Storage.get(OWNER_KEY),
+    caller().toString() == userAddress.toString(),
     'Caller does not have permission.',
   );
 
@@ -270,7 +269,7 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
   // make sure the user has a profile
-  const profile = _getProfile(caller());
+  const profile = profileMap.get(caller().toString(), new Profile());
 
   assert(
     profile.address.toString() == caller().toString(),
@@ -313,15 +312,15 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
 export function updatePost(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
 
-  const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
-
   const postId = args.nextU64().unwrap();
   const text = args.nextString().unwrap();
   const image = args.nextString().unwrap();
 
-  assert(postId < lastPostId, 'Post not found');
+  assert(postMap.contains(postId.toString()), 'Post does not exist');
 
   let post = postMap.get(postId.toString(), new Post());
+
+  assert(post.id == postId, 'Post does not exist');
 
   assert(
     post.author.toString() == caller().toString() ||
@@ -890,17 +889,4 @@ function _getUserRepostedPostsIds(userAddress: string): u64[] {
   }
 
   return repostedPosts;
-}
-/**
- * Fetches the profile associated with a specific address.
- * @param address - The address of the user to retrieve the profile for.
- * @returns A `Profile` object containing the user's details.
- * @remarks
- * This is an internal helper function used to fetch profiles from the `profileMap` storage.
- * If no profile is found, a default `Profile` object is returned.
- */
-function _getProfile(address: Address): Profile {
-  const profile = profileMap.get(address.toString(), new Profile());
-
-  return profile;
 }
