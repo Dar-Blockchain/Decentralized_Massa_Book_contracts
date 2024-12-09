@@ -42,6 +42,8 @@ export const profileMap = new PersistentMap<string, Profile>('profile');
  */
 export const postMap = new PersistentMap<string, Post>('post');
 
+export const repostsMap = new PersistentMap<string, u64>('reposts');
+
 /**
  * A persistent map that associates a like ID (as a `u64`) with a `Like` object.
  * Used for storing and retrieving like entries based on their unique ID.
@@ -63,5 +65,9 @@ export const followsMap = new PersistentMap<u64, Follow>('follows');
 export const usersFollowsMap = new PersistentMap<string, u64>('userFollows');
 
 export function _builduserFollowsKey(user1: string, user2: string): string {
-  return `${user1}_${user2}`;
+  return `${user1}::${user2}`;
+}
+
+export function _buildUserRepostKey(user: string, postId: string): string {
+  return `${user}::${postId}`;
 }

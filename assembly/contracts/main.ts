@@ -18,6 +18,7 @@ import { onlyOwner, setOwner } from './utils/ownership';
 import { Profile } from '../structs/profile';
 import {
   _builduserFollowsKey,
+  _buildUserRepostKey,
   COMMENT_ID_KEY,
   commentsMap,
   FOLLOW_ID_KEY,
@@ -27,6 +28,7 @@ import {
   POST_ID_KEY,
   postMap,
   profileMap,
+  repostsMap,
   usersFollowsMap,
 } from './storage';
 import { Post } from '../structs/post';
@@ -132,11 +134,6 @@ export function updateProfile(binaryArgs: StaticArray<u8>): void {
 export function followProfile(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const userAddress = args.nextString().unwrap();
-
-  assert(
-    caller().toString() == userAddress.toString(),
-    'Caller does not have permission.',
-  );
 
   const profile = profileMap.get(userAddress.toString(), new Profile());
 
@@ -355,13 +352,13 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
     'Original post not found',
   );
 
-  // Check if the user has already reposted this post
-  const userRepostedPostsIds = _getUserRepostedPostsIds(userAddress);
-
-  assert(
-    userRepostedPostsIds.indexOf(originalPostId) < 0,
-    'User has already reposted this post',
+  const repostKey = _buildUserRepostKey(
+    caller().toString(),
+    originalPostId.toString(),
   );
+
+  // Check if the user has already reposted this post
+  assert(repostsMap.contains(repostKey), 'User has already reposted this post');
 
   // craete new post with isRepost = true
   const lastPostId = u64.parse(Storage.get(POST_ID_KEY));
@@ -379,6 +376,8 @@ export function repostPost(binaryArgs: StaticArray<u8>): void {
   );
 
   postMap.set(lastPostId.toString(), repost);
+
+  repostsMap.set(repostKey, lastPostId);
 
   Storage.set(POST_ID_KEY, (lastPostId + 1).toString());
 
