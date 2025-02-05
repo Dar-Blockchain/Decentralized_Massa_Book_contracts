@@ -6,10 +6,12 @@ import {
   generateEvent,
   Storage,
   timestamp,
+  
 } from '@massalabs/massa-as-sdk';
 import {
   Args,
   bytesToString,
+  
   serializableObjectsArrayToBytes,
   stringToBytes,
 } from '@massalabs/as-types';
@@ -50,21 +52,44 @@ const START_FOLLOW_ID = 1;
  * It can only be called during the deployment phase.
  */
 export function constructor(binaryArgs: StaticArray<u8>): void {
-  // If you remove this check, someone could call your constructor function and reset your smart contract.
-  assert(Context.isDeployingContract());
+  //assert(Context.isDeployingContract());
 
-  const admin = Context.caller().toString();
+  const args = new Args(binaryArgs);
+  const userAddress = args.nextString().expect("User address required");
+  const firstName = args.nextString().expect("First name required");
+  const lastName = args.nextString().expect("Last name required");
+  const bio = args.nextString().expect("Bio required");
+  const photo = args.nextString().expect("Photo required");
+  const country = args.nextString().expect("Country required");
+  const city = args.nextString().expect("City required");
+  const telegram = args.nextString().expect("Telegram required");
+  const xHandle = args.nextString().expect("X handle required");
 
-  // set the contract owner
-  setOwner(new Args().add(admin).serialize());
+  // Set the owner to the user's address
+  _setOwner(userAddress);
 
+  // Initialize the profile
+  const profile = new Profile(
+    new Address(userAddress),
+    firstName,
+    lastName,
+    bio,
+    photo,
+    country,
+    city,
+    telegram,
+    xHandle
+  );
+
+  profileMap.set(userAddress, profile);
+
+  // Initialize storage IDs
   Storage.set(POST_ID_KEY, START_POST_ID.toString());
   Storage.set(LIKE_ID_KEY, START_LIKE_ID.toString());
   Storage.set(COMMENT_ID_KEY, START_COMMENT_ID.toString());
   Storage.set(FOLLOW_ID_KEY, START_FOLLOW_ID.toString());
 
-  // generate the event for the contract  deployment
-  generateEvent(createEvent('ContractDeployed', [admin]));
+  generateEvent(createEvent('ContractDeployed', [userAddress]));
 }
 
 /**
