@@ -5,6 +5,8 @@ export class Post implements Serializable {
   constructor(
     public id: u64 = 0,
     public author: Address = new Address(''),
+    public authorName: string = '',
+    public authorAvatar: string = '',
     public text: string = '',
     public image: string = '',
     public isRepost: bool = false,
@@ -16,6 +18,8 @@ export class Post implements Serializable {
     return new Args()
       .add(this.id)
       .add(this.author) // Serialize the author's profile
+      .add(this.authorName)
+      .add(this.authorAvatar)
       .add(this.text)
       .add(this.image)
       .add(this.isRepost)
@@ -30,6 +34,8 @@ export class Post implements Serializable {
     this.author = new Address(
       args.nextString().expect('Failed to deserialize author'),
     );
+    this.authorName = args.nextString().expect('Failed to deserialize author Name'),
+    this.authorAvatar = args.nextString().expect('Failed to deserialize author Avatar'),
     this.text = args.nextString().expect('Failed to deserialize content');
     this.image = args.nextString().expect('Failed to deserialize image');
     this.isRepost = args.nextBool().expect('Failed to deserialize isRepost');

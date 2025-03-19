@@ -10,9 +10,14 @@ import {
     caller,
   } from '@massalabs/massa-as-sdk';
   import { Args,    stringToBytes  } from '@massalabs/as-types';
-  
+  import { PersistentMap } from '../libraries/PersistentMap';
+
+  import { Profile } from '../structs/profile';
+
   const OWNER_KEY = 'OWNER_KEY';
   const USER_CONTRACT_PREFIX = 'USER_CONTRACT_';
+  export const profileMap = new PersistentMap<string, string>('profile');
+
   const ONE_UNIT = u64(10 ** 9);
 
   /**
@@ -73,7 +78,8 @@ import {
     const city = args.nextString().expect('City required');
     const telegram = args.nextString().expect('Telegram required');
     const xHandle = args.nextString().expect('X handle required');
-  
+    const MAS = args.nextU64().expect('MAS required');
+
     // Prepare constructor arguments for the profile contract
     const constructorArgs = new Args()
       .add(caller().toString()) // userAddress
@@ -92,12 +98,10 @@ import {
       new Address(addressOfTemplate)
     );
     const newContractAddress = createSC(profilecontract);
-    call(newContractAddress, 'constructor', constructorArgs, ONE_UNIT);
+    call(newContractAddress, 'constructor', constructorArgs, MAS);
 
 
-    // Store the new contract address using the caller's address
-    Storage.set(USER_CONTRACT_PREFIX + caller().toString(), newContractAddress.toString());
-  
+    profileMap.set(caller().toString(), newContractAddress.toString());
     generateEvent(
       createEvent('NewAccountContractDeployed', [
         newContractAddress.toString(),
@@ -114,15 +118,20 @@ import {
   export function getUserContract(binaryArgs: StaticArray<u8>): StaticArray<u8> {
     const args = new Args(binaryArgs);
     const userId = args.nextString().expect('Missing userId argument');
-  
-    const scAddress = Storage.get(USER_CONTRACT_PREFIX + userId);
     assert(
-      scAddress.length > 0,
+      profileMap.contains(userId),
       `No contract found for userId: ${userId}`,
     );
-  
+    const scAddress =  profileMap.getSome(userId);
+    generateEvent(
+
+    createEvent('NewAccountContractDeployed', [
+      "profile address::: ",
+      scAddress,
+    ]),
+  );
     // Return the address as serialized bytes.
-    return new Args().add(scAddress).serialize();
+    return stringToBytes(scAddress);
   }
   
  

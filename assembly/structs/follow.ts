@@ -6,6 +6,7 @@ export class Follow implements Serializable {
     public id: u64 = 0,
     public follower: Address = new Address(''),
     public followed: Address = new Address(''),
+    public userfollowed: Address = new Address(''),
     public createdAt: u64 = 0,
   ) {}
 
@@ -14,6 +15,7 @@ export class Follow implements Serializable {
       .add(this.id)
       .add(this.follower)
       .add(this.followed)
+      .add(this.userfollowed)
       .add(this.createdAt)
       .serialize();
   }
@@ -26,6 +28,9 @@ export class Follow implements Serializable {
       args.nextString().expect('Failed to deserialize follower'),
     );
     this.followed = new Address(
+      args.nextString().expect('Failed to deserialize followed'),
+    );
+    this.userfollowed = new Address(
       args.nextString().expect('Failed to deserialize followed'),
     );
     this.createdAt = args.nextU64().expect('Failed to deserialize createdAt');

@@ -6,6 +6,8 @@ import { Comment } from '../structs/comment';
 import { Like } from '../structs/like';
 import { Follow } from '../structs/follow';
 
+export const _UserAddress = '_UserAddress';
+
 /**
  * Key used in storage to track the next available post ID.
  * It ensures that each post has a unique and incrementing identifier.

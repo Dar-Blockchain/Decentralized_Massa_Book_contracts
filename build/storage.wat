@@ -21,10 +21,11 @@
  (global $~lib/rt/itcms/fromSpace (mut i32) (i32.const 0))
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $~lib/@massalabs/as-types/assembly/argument/NoArg (mut i32) (i32.const 0))
- (global $assembly/contracts/storage/POST_ID_KEY i32 (i32.const 1632))
- (global $assembly/contracts/storage/LIKE_ID_KEY i32 (i32.const 1664))
- (global $assembly/contracts/storage/COMMENT_ID_KEY i32 (i32.const 1696))
- (global $assembly/contracts/storage/FOLLOW_ID_KEY i32 (i32.const 1744))
+ (global $assembly/contracts/storage/_UserAddress i32 (i32.const 1632))
+ (global $assembly/contracts/storage/POST_ID_KEY i32 (i32.const 1680))
+ (global $assembly/contracts/storage/LIKE_ID_KEY i32 (i32.const 1712))
+ (global $assembly/contracts/storage/COMMENT_ID_KEY i32 (i32.const 1744))
+ (global $assembly/contracts/storage/FOLLOW_ID_KEY i32 (i32.const 1792))
  (global $assembly/contracts/storage/profileMap (mut i32) (i32.const 0))
  (global $assembly/contracts/storage/postMap (mut i32) (i32.const 0))
  (global $assembly/contracts/storage/repostsMap (mut i32) (i32.const 0))
@@ -32,8 +33,8 @@
  (global $assembly/contracts/storage/commentsMap (mut i32) (i32.const 0))
  (global $assembly/contracts/storage/followsMap (mut i32) (i32.const 0))
  (global $assembly/contracts/storage/usersFollowsMap (mut i32) (i32.const 0))
- (global $~lib/rt/__rtti_base i32 (i32.const 2320))
- (global $~lib/memory/__stack_pointer (mut i32) (i32.const 35176))
+ (global $~lib/rt/__rtti_base i32 (i32.const 2368))
+ (global $~lib/memory/__stack_pointer (mut i32) (i32.const 35224))
  (memory $0 1)
  (data $0 (i32.const 1036) "<")
  (data $0.1 (i32.const 1048) "\02\00\00\00 \00\00\00~\00l\00i\00b\00/\00r\00t\00/\00i\00t\00c\00m\00s\00.\00t\00s")
@@ -53,39 +54,42 @@
  (data $10.1 (i32.const 1560) "\05")
  (data $11 (i32.const 1580) "\1c")
  (data $11.1 (i32.const 1592) "\02\00\00\00\04\00\00\00:\00:")
- (data $12 (i32.const 1612) "\1c")
- (data $12.1 (i32.const 1624) "\02\00\00\00\0c\00\00\00p\00o\00s\00t\00I\00d")
- (data $13 (i32.const 1644) "\1c")
- (data $13.1 (i32.const 1656) "\02\00\00\00\0c\00\00\00l\00i\00k\00e\00I\00d")
- (data $14 (i32.const 1676) ",")
- (data $14.1 (i32.const 1688) "\02\00\00\00\12\00\00\00c\00o\00m\00m\00e\00n\00t\00I\00d")
+ (data $12 (i32.const 1612) ",")
+ (data $12.1 (i32.const 1624) "\02\00\00\00\18\00\00\00_\00U\00s\00e\00r\00A\00d\00d\00r\00e\00s\00s")
+ (data $13 (i32.const 1660) "\1c")
+ (data $13.1 (i32.const 1672) "\02\00\00\00\0c\00\00\00p\00o\00s\00t\00I\00d")
+ (data $14 (i32.const 1692) "\1c")
+ (data $14.1 (i32.const 1704) "\02\00\00\00\0c\00\00\00l\00i\00k\00e\00I\00d")
  (data $15 (i32.const 1724) ",")
- (data $15.1 (i32.const 1736) "\02\00\00\00\10\00\00\00f\00o\00l\00l\00o\00w\00I\00d")
- (data $16 (i32.const 1772) "\1c")
- (data $16.1 (i32.const 1784) "\02")
- (data $17 (i32.const 1804) ",")
- (data $17.1 (i32.const 1816) "\02\00\00\00\0e\00\00\00p\00r\00o\00f\00i\00l\00e")
- (data $18 (i32.const 1852) "\1c")
- (data $18.1 (i32.const 1864) "\02\00\00\00\08\00\00\00p\00o\00s\00t")
- (data $19 (i32.const 1884) ",")
- (data $19.1 (i32.const 1896) "\02\00\00\00\0e\00\00\00r\00e\00p\00o\00s\00t\00s")
+ (data $15.1 (i32.const 1736) "\02\00\00\00\12\00\00\00c\00o\00m\00m\00e\00n\00t\00I\00d")
+ (data $16 (i32.const 1772) ",")
+ (data $16.1 (i32.const 1784) "\02\00\00\00\10\00\00\00f\00o\00l\00l\00o\00w\00I\00d")
+ (data $17 (i32.const 1820) "\1c")
+ (data $17.1 (i32.const 1832) "\02")
+ (data $18 (i32.const 1852) ",")
+ (data $18.1 (i32.const 1864) "\02\00\00\00\0e\00\00\00p\00r\00o\00f\00i\00l\00e")
+ (data $19 (i32.const 1900) "\1c")
+ (data $19.1 (i32.const 1912) "\02\00\00\00\08\00\00\00p\00o\00s\00t")
  (data $20 (i32.const 1932) ",")
- (data $20.1 (i32.const 1944) "\02\00\00\00\10\00\00\00l\00i\00k\00e\00s\00M\00a\00p")
+ (data $20.1 (i32.const 1944) "\02\00\00\00\0e\00\00\00r\00e\00p\00o\00s\00t\00s")
  (data $21 (i32.const 1980) ",")
- (data $21.1 (i32.const 1992) "\02\00\00\00\10\00\00\00c\00o\00m\00m\00e\00n\00t\00s")
+ (data $21.1 (i32.const 1992) "\02\00\00\00\10\00\00\00l\00i\00k\00e\00s\00M\00a\00p")
  (data $22 (i32.const 2028) ",")
- (data $22.1 (i32.const 2040) "\02\00\00\00\0e\00\00\00f\00o\00l\00l\00o\00w\00s")
+ (data $22.1 (i32.const 2040) "\02\00\00\00\10\00\00\00c\00o\00m\00m\00e\00n\00t\00s")
  (data $23 (i32.const 2076) ",")
- (data $23.1 (i32.const 2088) "\02\00\00\00\16\00\00\00u\00s\00e\00r\00F\00o\00l\00l\00o\00w\00s")
- (data $24 (i32.const 2124) "\1c\00\00\00\03\00\00\00\00\00\00\00\14\00\00\00\0c\00\00\00\00\00\00\00@\06")
- (data $25 (i32.const 2156) "\1c\00\00\00\03\00\00\00\00\00\00\00\14\00\00\00\0c\00\00\00\00\00\00\00@\06")
- (data $26 (i32.const 2188) "<")
- (data $26.1 (i32.const 2200) "\02\00\00\00*\00\00\00O\00b\00j\00e\00c\00t\00 \00a\00l\00r\00e\00a\00d\00y\00 \00p\00i\00n\00n\00e\00d")
- (data $27 (i32.const 2252) "<")
- (data $27.1 (i32.const 2264) "\02\00\00\00(\00\00\00O\00b\00j\00e\00c\00t\00 \00i\00s\00 \00n\00o\00t\00 \00p\00i\00n\00n\00e\00d")
- (data $28 (i32.const 2320) "\15\00\00\00 \00\00\00 \00\00\00 ")
- (data $28.1 (i32.const 2344) "d\00\00\00\02\01\00\00\00\00\00\00 ")
- (data $28.2 (i32.const 2404) "\04A")
+ (data $23.1 (i32.const 2088) "\02\00\00\00\0e\00\00\00f\00o\00l\00l\00o\00w\00s")
+ (data $24 (i32.const 2124) ",")
+ (data $24.1 (i32.const 2136) "\02\00\00\00\16\00\00\00u\00s\00e\00r\00F\00o\00l\00l\00o\00w\00s")
+ (data $25 (i32.const 2172) "\1c\00\00\00\03\00\00\00\00\00\00\00\14\00\00\00\0c\00\00\00\00\00\00\00@\06")
+ (data $26 (i32.const 2204) "\1c\00\00\00\03\00\00\00\00\00\00\00\14\00\00\00\0c\00\00\00\00\00\00\00@\06")
+ (data $27 (i32.const 2236) "<")
+ (data $27.1 (i32.const 2248) "\02\00\00\00*\00\00\00O\00b\00j\00e\00c\00t\00 \00a\00l\00r\00e\00a\00d\00y\00 \00p\00i\00n\00n\00e\00d")
+ (data $28 (i32.const 2300) "<")
+ (data $28.1 (i32.const 2312) "\02\00\00\00(\00\00\00O\00b\00j\00e\00c\00t\00 \00i\00s\00 \00n\00o\00t\00 \00p\00i\00n\00n\00e\00d")
+ (data $29 (i32.const 2368) "\15\00\00\00 \00\00\00 \00\00\00 ")
+ (data $29.1 (i32.const 2392) "d\00\00\00\02\01\00\00\00\00\00\00 ")
+ (data $29.2 (i32.const 2452) "\04A")
+ (export "_UserAddress" (global $assembly/contracts/storage/_UserAddress))
  (export "POST_ID_KEY" (global $assembly/contracts/storage/POST_ID_KEY))
  (export "LIKE_ID_KEY" (global $assembly/contracts/storage/LIKE_ID_KEY))
  (export "COMMENT_ID_KEY" (global $assembly/contracts/storage/COMMENT_ID_KEY))
@@ -149,7 +153,7 @@
    i32.load offset=8
    i32.eqz
    local.get $0
-   i32.const 35176
+   i32.const 35224
    i32.lt_u
    i32.and
    i32.eqz
@@ -246,7 +250,7 @@
    i32.const 1
   else
    local.get $2
-   i32.const 2320
+   i32.const 2368
    i32.load
    i32.gt_u
    if
@@ -260,7 +264,7 @@
    local.get $2
    i32.const 2
    i32.shl
-   i32.const 2324
+   i32.const 2372
    i32.add
    i32.load
    i32.const 32
@@ -350,11 +354,13 @@
   (local $1 i32)
   i32.const 1632
   call $~lib/rt/itcms/__visit
-  i32.const 1664
+  i32.const 1680
   call $~lib/rt/itcms/__visit
-  i32.const 1696
+  i32.const 1712
   call $~lib/rt/itcms/__visit
   i32.const 1744
+  call $~lib/rt/itcms/__visit
+  i32.const 1792
   call $~lib/rt/itcms/__visit
   global.get $assembly/contracts/storage/profileMap
   local.tee $0
@@ -404,9 +410,9 @@
   call $~lib/rt/itcms/__visit
   i32.const 1264
   call $~lib/rt/itcms/__visit
-  i32.const 2208
+  i32.const 2256
   call $~lib/rt/itcms/__visit
-  i32.const 2272
+  i32.const 2320
   call $~lib/rt/itcms/__visit
   i32.const 1600
   call $~lib/rt/itcms/__visit
@@ -1016,10 +1022,10 @@
   if
    unreachable
   end
-  i32.const 35184
+  i32.const 35232
   i32.const 0
   call $~lib/@massalabs/as-types/assembly/argument/Args#set:_offset
-  i32.const 36752
+  i32.const 36800
   i32.const 0
   i32.store
   loop $for-loop|0
@@ -1030,7 +1036,7 @@
     local.get $1
     i32.const 2
     i32.shl
-    i32.const 35184
+    i32.const 35232
     i32.add
     i32.const 0
     i32.store offset=4
@@ -1048,7 +1054,7 @@
       i32.add
       i32.const 2
       i32.shl
-      i32.const 35184
+      i32.const 35232
       i32.add
       i32.const 0
       i32.store offset=96
@@ -1066,14 +1072,14 @@
     br $for-loop|0
    end
   end
-  i32.const 35184
-  i32.const 36756
+  i32.const 35232
+  i32.const 36804
   memory.size
   i64.extend_i32_s
   i64.const 16
   i64.shl
   call $~lib/rt/tlsf/addMemory
-  i32.const 35184
+  i32.const 35232
   global.set $~lib/rt/tlsf/ROOT
  )
  (func $~lib/rt/itcms/step (result i32)
@@ -1145,7 +1151,7 @@
      local.set $0
      loop $while-continue|0
       local.get $0
-      i32.const 35176
+      i32.const 35224
       i32.lt_u
       if
        local.get $0
@@ -1224,7 +1230,7 @@
      unreachable
     end
     local.get $0
-    i32.const 35176
+    i32.const 35224
     i32.lt_u
     if
      local.get $0
@@ -1243,7 +1249,7 @@
      i32.const 4
      i32.add
      local.tee $1
-     i32.const 35176
+     i32.const 35224
      i32.ge_u
      if
       global.get $~lib/rt/tlsf/ROOT
@@ -1725,7 +1731,7 @@
   memory.size
   i32.const 16
   i32.shl
-  i32.const 35176
+  i32.const 35224
   i32.sub
   i32.const 1
   i32.shr_u
@@ -1883,7 +1889,7 @@
    i32.const 3
    i32.eq
    if
-    i32.const 2208
+    i32.const 2256
     i32.const 1056
     i32.const 338
     i32.const 7
@@ -1913,7 +1919,7 @@
   i32.const 3
   i32.ne
   if
-   i32.const 2272
+   i32.const 2320
    i32.const 1056
    i32.const 352
    i32.const 5
@@ -2114,6 +2120,20 @@
         end
         local.get $0
         i32.load offset=16
+        local.tee $1
+        if
+         local.get $1
+         call $~lib/rt/itcms/__visit
+        end
+        local.get $0
+        i32.load offset=20
+        local.tee $1
+        if
+         local.get $1
+         call $~lib/rt/itcms/__visit
+        end
+        local.get $0
+        i32.load offset=24
         local.tee $0
         if
          local.get $0
@@ -2155,6 +2175,13 @@
      end
      local.get $0
      i32.load offset=12
+     local.tee $1
+     if
+      local.get $1
+      call $~lib/rt/itcms/__visit
+     end
+     local.get $0
+     i32.load offset=16
      local.tee $0
      if
       local.get $0
@@ -2205,11 +2232,11 @@
  )
  (func $~stack_check
   global.get $~lib/memory/__stack_pointer
-  i32.const 2408
+  i32.const 2456
   i32.lt_s
   if
-   i32.const 35200
    i32.const 35248
+   i32.const 35296
    i32.const 1
    i32.const 1
    call $~lib/builtins/abort
@@ -2269,7 +2296,7 @@
     i32.const 8
     i32.add
     global.set $~lib/memory/__stack_pointer
-    i32.const 1792
+    i32.const 1840
     local.set $0
     br $__inlined_func$~lib/string/String#concat$56
    end
@@ -2361,7 +2388,7 @@
   i32.store
   call $start:~lib/@massalabs/as-types/assembly/argument
   global.get $~lib/memory/__stack_pointer
-  i32.const 1824
+  i32.const 1872
   i32.store
   global.get $~lib/memory/__stack_pointer
   i32.const 20
@@ -2388,12 +2415,12 @@
   local.get $0
   i32.store offset=4
   global.get $~lib/memory/__stack_pointer
-  i32.const 1824
+  i32.const 1872
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 1600
   i32.store offset=16
-  i32.const 1824
+  i32.const 1872
   i32.const 1600
   call $~lib/string/String.__concat
   local.set $1
@@ -2410,7 +2437,7 @@
   local.get $0
   global.set $assembly/contracts/storage/profileMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 1872
+  i32.const 1920
   i32.store
   global.get $~lib/memory/__stack_pointer
   i32.const 20
@@ -2437,12 +2464,12 @@
   local.get $0
   i32.store offset=4
   global.get $~lib/memory/__stack_pointer
-  i32.const 1872
+  i32.const 1920
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 1600
   i32.store offset=16
-  i32.const 1872
+  i32.const 1920
   i32.const 1600
   call $~lib/string/String.__concat
   local.set $1
@@ -2459,13 +2486,13 @@
   local.get $0
   global.set $assembly/contracts/storage/postMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 1904
+  i32.const 1952
   i32.store
-  i32.const 1904
+  i32.const 1952
   call $"assembly/libraries/PersistentMap/PersistentMap<~lib/string/String,u64>#constructor"
   global.set $assembly/contracts/storage/repostsMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 1952
+  i32.const 2000
   i32.store
   global.get $~lib/memory/__stack_pointer
   i32.const 20
@@ -2492,12 +2519,12 @@
   local.get $0
   i32.store offset=4
   global.get $~lib/memory/__stack_pointer
-  i32.const 1952
+  i32.const 2000
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 1600
   i32.store offset=16
-  i32.const 1952
+  i32.const 2000
   i32.const 1600
   call $~lib/string/String.__concat
   local.set $1
@@ -2514,7 +2541,7 @@
   local.get $0
   global.set $assembly/contracts/storage/likesMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 2000
+  i32.const 2048
   i32.store
   global.get $~lib/memory/__stack_pointer
   i32.const 20
@@ -2541,12 +2568,12 @@
   local.get $0
   i32.store offset=4
   global.get $~lib/memory/__stack_pointer
-  i32.const 2000
+  i32.const 2048
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 1600
   i32.store offset=16
-  i32.const 2000
+  i32.const 2048
   i32.const 1600
   call $~lib/string/String.__concat
   local.set $1
@@ -2563,7 +2590,7 @@
   local.get $0
   global.set $assembly/contracts/storage/commentsMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 2048
+  i32.const 2096
   i32.store
   global.get $~lib/memory/__stack_pointer
   i32.const 20
@@ -2590,12 +2617,12 @@
   local.get $0
   i32.store offset=4
   global.get $~lib/memory/__stack_pointer
-  i32.const 2048
+  i32.const 2096
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 1600
   i32.store offset=16
-  i32.const 2048
+  i32.const 2096
   i32.const 1600
   call $~lib/string/String.__concat
   local.set $1
@@ -2612,9 +2639,9 @@
   local.get $0
   global.set $assembly/contracts/storage/followsMap
   global.get $~lib/memory/__stack_pointer
-  i32.const 2096
+  i32.const 2144
   i32.store
-  i32.const 2096
+  i32.const 2144
   call $"assembly/libraries/PersistentMap/PersistentMap<~lib/string/String,u64>#constructor"
   global.set $assembly/contracts/storage/usersFollowsMap
   global.get $~lib/memory/__stack_pointer
@@ -2679,7 +2706,7 @@
    i32.const 0
    i32.lt_s
    if
-    i32.const 1792
+    i32.const 1840
     local.set $0
     br $folding-inner0
    end
@@ -2701,20 +2728,20 @@
      local.get $0
      i32.store offset=4
     else
-     i32.const 1792
+     i32.const 1840
      local.set $0
     end
     br $folding-inner0
    end
-   i32.const 1792
+   i32.const 1840
    local.set $1
    global.get $~lib/memory/__stack_pointer
-   i32.const 1792
+   i32.const 1840
    i32.store offset=8
    global.get $~lib/memory/__stack_pointer
-   i32.const 1792
+   i32.const 1840
    i32.store offset=4
-   i32.const 1792
+   i32.const 1840
    call $~lib/string/String#get:length
    local.set $5
    loop $for-loop|0
@@ -2759,11 +2786,11 @@
       local.get $1
       i32.store offset=4
       global.get $~lib/memory/__stack_pointer
-      i32.const 1792
+      i32.const 1840
       i32.store offset=12
       global.get $~lib/memory/__stack_pointer
       local.get $1
-      i32.const 1792
+      i32.const 1840
       call $~lib/string/String.__concat
       local.tee $1
       i32.store offset=8
@@ -2818,13 +2845,13 @@
  (func $export:assembly/contracts/storage/_builduserFollowsKey (param $0 i32) (param $1 i32) (result i32)
   local.get $0
   local.get $1
-  i32.const 2144
+  i32.const 2192
   call $byn$mgfn-shared$export:assembly/contracts/storage/_builduserFollowsKey
  )
  (func $export:assembly/contracts/storage/_buildUserRepostKey (param $0 i32) (param $1 i32) (result i32)
   local.get $0
   local.get $1
-  i32.const 2176
+  i32.const 2224
   call $byn$mgfn-shared$export:assembly/contracts/storage/_builduserFollowsKey
  )
  (func $byn$mgfn-shared$export:assembly/contracts/storage/_builduserFollowsKey (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
@@ -2880,7 +2907,7 @@
   local.get $2
   i32.store offset=8
   global.get $~lib/memory/__stack_pointer
-  i32.const 1792
+  i32.const 1840
   i32.store offset=12
   global.get $~lib/memory/__stack_pointer
   i32.const 8
@@ -2901,7 +2928,7 @@
   i32.shr_u
   local.set $0
   global.get $~lib/memory/__stack_pointer
-  i32.const 1792
+  i32.const 1840
   i32.store
   local.get $2
   local.get $0

@@ -4,6 +4,8 @@ export class Post implements Serializable<Post> {
   constructor(
     public id: bigint = 0n, // Use bigint to handle u64 values in JavaScript
     public author: string = '', // Address serialized as string
+    public authorName: string = '',
+    public authorAvatar: string = '',
     public text: string = '',
     public image: string = '',
     public isRepost: boolean = false,
@@ -16,6 +18,8 @@ export class Post implements Serializable<Post> {
     const args = new Args()
       .addU64(this.id)
       .addString(this.author) // Author as a string
+      .addString(this.authorName)
+      .addString(this.authorAvatar)
       .addString(this.text)
       .addString(this.image)
       .addBool(this.isRepost)
@@ -31,6 +35,8 @@ export class Post implements Serializable<Post> {
 
     this.id = args.nextU64(); // Deserialize id as bigint
     this.author = args.nextString(); // Deserialize author
+    this.authorName = args.nextString(); // Deserialize authorName
+    this.authorAvatar = args.nextString(); // Deserialize authorAvatar
     this.text = args.nextString(); // Deserialize text
     this.image = args.nextString(); // Deserialize image
     this.isRepost = args.nextBool(); // Deserialize isRepost
