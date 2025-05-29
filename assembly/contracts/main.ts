@@ -784,6 +784,14 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
 
   assert(postMap.contains(postId.toString()), 'Post not found');
 
+  // Get the commenter's profile
+  const profile = profileMap.get(caller().toString(), new Profile());
+
+  assert(
+    profile.address.toString() == caller().toString(),
+    'User has no profile. Please create a profile first.',
+  );
+
   const commentId = u64.parse(Storage.get(COMMENT_ID_KEY));
 
   let parentId: u64 = u64(0);
@@ -798,6 +806,8 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
     commentId,
     postId,
     caller(),
+    profile.firstName + ' ' + profile.lastName,
+    profile.avatar,
     text,
     timestamp(),
     parentId,
