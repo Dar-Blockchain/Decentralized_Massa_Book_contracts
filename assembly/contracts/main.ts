@@ -231,7 +231,7 @@ export function followProfile(binaryArgs: StaticArray<u8>): void {
  
   const follow = new Follow(
     lastFollowId,
-    caller(),
+    new Address(bytesToString(getOwnerAddress())),
     new Address(profileAddress),
     new Address(userAddress.toString()),
     timestamp()
@@ -780,7 +780,8 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
   const text = args.nextString().unwrap();
-  const parentCommentIdOpt = args.nextU64(); // Optional parent comment ID
+  const CommenterProfile = args.nextString().unwrap();
+  // const parentCommentIdOpt = args.nextU64(); // Optional parent comment ID
 
   assert(postMap.contains(postId.toString()), 'Post not found');
 
@@ -796,16 +797,18 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
 
   let parentId: u64 = u64(0);
 
-  if (!parentCommentIdOpt.isErr()) {
-    const parentCommentId = parentCommentIdOpt.unwrap();
-    assert(commentsMap.contains(parentCommentId), 'Parent comment not found');
-    parentId = parentCommentId;
-  }
-
+  // if (!parentCommentIdOpt.isErr()) {
+  //   const parentCommentId = parentCommentIdOpt.unwrap();
+  //   assert(commentsMap.contains(parentCommentId), 'Parent comment not found');
+  //   parentId = parentCommentId;
+  // }
+  const profile : Profile = new IProfile(new Address(CommenterProfile)).getProfile(caller().toString());
   const comment = new Comment(
     commentId,
     postId,
     caller(),
+    profile.firstName+" "+profile.lastName,
+    profile.avatar,
     profile.firstName + ' ' + profile.lastName,
     profile.avatar,
     text,
