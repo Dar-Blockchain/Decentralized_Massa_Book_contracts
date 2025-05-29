@@ -8,7 +8,8 @@ import {
 } from '@massalabs/massa-web3';
 import {
   createProfile,getProfileAddress,testCreatePost,getPosts,getUserProfile,followUser,getFollowedPosts,getOwnerAddress,
-  getFollowed
+  getFollowed,
+  getFollowersNbr
 } from './test/contractFactoryFunc';
 import { getScByteCode } from './utils';
 
@@ -122,11 +123,12 @@ async function followProfileTest() {
   const profile2 = await __getProfileAddress(contract2,account2)
   console.log("my profile 2"+profile2)
 
-  const cont = new SmartContract(provider, profile1);
 
- await followUser(cont,profile2,account2.address.toString());
+ await followUser(contract,account.address.toString(),account2.address.toString());
 }
-
+async function _getFollowersNbr(usAddress : string){
+  getFollowersNbr(contract,usAddress) 
+}
 await testCreateProfile();
 let profileAdd = await _getProfileAddress();
 let profileAdd2 = await __getProfileAddress(contract2,account2);
@@ -155,6 +157,7 @@ await _getPosts(profileAdd)
 await followProfileTest();
 
 await __getFollowed()
+await _getFollowersNbr(account2.address.toString())
 await __getFollowedPosts();
 console.log('All the smart conract Events :');
 

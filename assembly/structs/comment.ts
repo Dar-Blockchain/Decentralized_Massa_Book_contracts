@@ -6,6 +6,8 @@ export class Comment implements Serializable {
     public id: u64 = 0,
     public postId: u64 = 0,
     public commenter: Address = new Address(''),
+    public commenterName: string = '',
+    public commenterAvatar: string = '',
     public text: string = '',
     public createdAt: u64 = 0,
     public parentId: u64 = 0, // New field for parent comment ID
@@ -18,7 +20,10 @@ export class Comment implements Serializable {
       .add(this.commenter)
       .add(this.text)
       .add(this.createdAt)
-      .add(this.parentId);
+      .add(this.parentId)
+      .add(this.commenterName)
+      .add(this.commenterAvatar)
+      ;
 
     return args.serialize();
   }
@@ -33,6 +38,8 @@ export class Comment implements Serializable {
     this.text = args.nextString().expect('Failed to deserialize text');
     this.createdAt = args.nextU64().expect('Failed to deserialize createdAt');
     this.parentId = args.nextU64().expect('Failed to deserialize parentId');
+    this.commenterName = args.nextString().expect('Failed to deserialize commenterName');
+    this.commenterAvatar = args.nextString().expect('Failed to deserialize commenterAvatar');
 
     return new Result(args.offset);
   }

@@ -2159,6 +2159,20 @@
       end
       local.get $0
       i32.load offset=20
+      local.tee $1
+      if
+       local.get $1
+       call $~lib/rt/itcms/__visit
+      end
+      local.get $0
+      i32.load offset=24
+      local.tee $1
+      if
+       local.get $1
+       call $~lib/rt/itcms/__visit
+      end
+      local.get $0
+      i32.load offset=28
       local.tee $0
       if
        local.get $0

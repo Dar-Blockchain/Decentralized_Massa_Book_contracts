@@ -31,6 +31,14 @@ export class IProfile{
         );
         return new Args(res).nextSerializable<Profile>().unwrap();
       }
+      followProfile(userProfile:string, followUserAddress:string): void {
+        call(
+          this._origin,
+          'followProfile',
+          new Args().add(userProfile).add(followUserAddress),
+          0,
+        );
+      }
       getOwnerAddress(): string {
         const res = call(
           this._origin,

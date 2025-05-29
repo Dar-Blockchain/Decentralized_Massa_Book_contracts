@@ -9,14 +9,16 @@ import {
     Address,
     caller,
   } from '@massalabs/massa-as-sdk';
-  import { Args,    stringToBytes  } from '@massalabs/as-types';
+  import { Args,    stringToBytes, u64ToBytes  } from '@massalabs/as-types';
   import { PersistentMap } from '../libraries/PersistentMap';
 
   import { Profile } from '../structs/profile';
+  import { IProfile } from './interfaces/IProfile';
 
   const OWNER_KEY = 'OWNER_KEY';
   const USER_CONTRACT_PREFIX = 'USER_CONTRACT_';
   export const profileMap = new PersistentMap<string, string>('profile');
+  export const followers = new PersistentMap<string, u64>('profile');
 
   const ONE_UNIT = u64(10 ** 9);
 
@@ -134,4 +136,30 @@ import {
     return stringToBytes(scAddress);
   }
   
- 
+  export function following(binaryArgs: StaticArray<u8>): void {
+    const args = new Args(binaryArgs);
+    const user1Address = args.nextString().expect('Missing userId argument');
+    const user2Address = args.nextString().expect('Missing userId argument');
+    const profile1 = profileMap.getSome(user1Address);
+    const profile2 = profileMap.getSome(user2Address);
+
+    new IProfile(new Address(profile1)).followProfile(profile2,user2Address);
+    if(followers.contains(profile2)){
+     let nbrFollowers : u64 = followers.getSome(profile2);
+     followers.set(profile2,nbrFollowers+1);
+    }
+    else{
+      followers.set(profile2,u64(1));
+    }
+  }
+
+  export function getFollowers(binaryArgs: StaticArray<u8>):  StaticArray<u8> {
+    const args = new Args(binaryArgs);
+    const user1Address = args.nextString().expect('Missing userId argument');
+    const profile1 = profileMap.getSome(user1Address);
+    let nbFollowers : u64  = u64(0);
+    if(followers.contains(profile1)){
+     nbFollowers  = followers.getSome(profile1);
+    }
+    return u64ToBytes(nbFollowers);
+  }

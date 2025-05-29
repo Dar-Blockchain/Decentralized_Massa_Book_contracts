@@ -136,11 +136,21 @@ export async function getFollowed(contract: SmartContract,page:bigint) {
 
   console.log('followerProfile :', deserializedPosts);
 }
+export async function getFollowersNbr(contract: SmartContract,userAddress:string) {
+  const args = new Args().addString(userAddress)
 
-export async function followUser(contract: SmartContract, profileAddress: string,userAddress: string) {
+
+  const result = await contract.read('getFollowers', args);
+
+ 
+  const des = new Args(result.value).nextU64()
+  console.log('followerProfile :',des);
+
+}
+export async function followUser(contract: SmartContract, userAddress: string,userAddress1: string) {
   const operation = await contract.call(
-    'followProfile',
-    new Args().addString(profileAddress).addString(userAddress).serialize(),
+    'following',
+    new Args().addString(userAddress).addString(userAddress1).serialize(),
     {
       coins: Mas.fromString('0.02'),
     },
