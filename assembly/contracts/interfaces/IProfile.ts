@@ -39,16 +39,7 @@ export class IProfile{
           0,
         );
       }
-      getOwnerAddress(): string {
-        const res = call(
-          this._origin,
-          'getOwnerAddress',
-          new Args(),
-          0,
-        );
-        return res.toString();
-      }
-
+     
       addPostComment(postId: u64, text: string, commenterName: string, commenterAvatar: string): void {
         call(
           this._origin,

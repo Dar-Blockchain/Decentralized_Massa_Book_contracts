@@ -479,10 +479,10 @@ export function deletePost(binaryArgs: StaticArray<u8>): void {
 
   const post = postMap.get(postId.toString(), new Post());
 
+  // Check if the caller has permission to delete this post
   assert(
-    post.author.toString() == caller().toString() ||
-      Storage.get(OWNER_KEY) == caller().toString(),
-    'Caller has no permission to delete this post',
+      caller().toString() == Storage.get(OWNER_KEY),
+    'User has no permission to delete this post',
   );
 
   postMap.delete(postId.toString());

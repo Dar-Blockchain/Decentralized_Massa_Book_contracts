@@ -17,6 +17,7 @@ import { Profile } from './structs/profile';
 import { Post } from './structs/post';
 import { Comment } from './structs/comment';
 import { Follow } from './structs/follow';
+import { Account } from '@massalabs/massa-web3';
 
 export async function createProfile(contract: SmartContract,templateAddress:string,firstname:string,lastname:string,bio:string,avatar:string) {
   console.log('Adding a post to the contract...');
@@ -317,4 +318,82 @@ export async function getFactoryPostComments(
 
   console.log('Factory Post Comments:', deserializedComments);
   return deserializedComments;
+}
+
+export async function testDeletePost(
+  profileContract: SmartContract,
+  postId: bigint
+): Promise<boolean> {
+  console.log('Testing deletePost for post ID:', postId);
+  
+  const args = new Args().addU64(postId);
+  
+  const operation: Operation = await profileContract.call('deletePost', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  console.log('Delete operation ID:', operation.id);
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('DeletePost executed successfully');
+    return true;
+  } else {
+    console.error('DeletePost operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function verifyPostDeleted(
+  contract: SmartContract,
+  postId: bigint
+): Promise<boolean> {
+  console.log('Verifying post deletion for post ID:', postId);
+  
+  try {
+    const args = new Args().addU64(postId);
+    const result = await contract.read('getPost', args.serialize());
+    
+    // If we get here, the post still exists (which means deletion failed)
+    console.log('ERROR: Post still exists after deletion attempt');
+    return false;
+  } catch (error) {
+    // If we get an error, it likely means the post doesn't exist (which is expected)
+    console.log('SUCCESS: Post appears to be deleted (error when trying to retrieve):', error);
+    return true;
+  }
+}
+
+export async function testDeletePostSimple(
+  factoryContract: SmartContract,
+  authorAccount: Account,
+  postId: bigint
+): Promise<boolean> {
+  console.log('Testing deletePost for post ID:', postId, 'by author:', authorAccount.address.toString());
+  
+  // Get the profile address for the author
+  const profileAddress = await getProfileAddress(factoryContract, authorAccount.address.toString());
+  
+  // Create a Web3Provider for the author account
+  const { Web3Provider } = await import('@massalabs/massa-web3');
+  const provider = Web3Provider.buildnet(authorAccount);
+  const profileContract = new SmartContract(provider, profileAddress);
+  
+  // Call deletePost with only the postId
+  const args = new Args().addU64(postId);
+  
+  const operation: Operation = await profileContract.call('deletePost', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  console.log('Delete operation ID:', operation.id);
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('DeletePost executed successfully');
+    return true;
+  } else {
+    console.error('DeletePost operation failed with status:', operationStatus);
+    return false;
+  }
 }

@@ -302,7 +302,7 @@
  (data $144 (i32.const 9212) ",")
  (data $144.1 (i32.const 9224) "\02\00\00\00\1c\00\00\00P\00o\00s\00t\00 \00n\00o\00t\00 \00f\00o\00u\00n\00d")
  (data $145 (i32.const 9260) "l")
- (data $145.1 (i32.const 9272) "\02\00\00\00X\00\00\00C\00a\00l\00l\00e\00r\00 \00h\00a\00s\00 \00n\00o\00 \00p\00e\00r\00m\00i\00s\00s\00i\00o\00n\00 \00t\00o\00 \00d\00e\00l\00e\00t\00e\00 \00t\00h\00i\00s\00 \00p\00o\00s\00t")
+ (data $145.1 (i32.const 9272) "\02\00\00\00T\00\00\00U\00s\00e\00r\00 \00h\00a\00s\00 \00n\00o\00 \00p\00e\00r\00m\00i\00s\00s\00i\00o\00n\00 \00t\00o\00 \00d\00e\00l\00e\00t\00e\00 \00t\00h\00i\00s\00 \00p\00o\00s\00t")
  (data $146 (i32.const 9372) ",")
  (data $146.1 (i32.const 9384) "\02\00\00\00\14\00\00\00D\00e\00l\00e\00t\00e\00P\00o\00s\00t")
  (data $147 (i32.const 9420) "<")
@@ -17197,15 +17197,11 @@
   local.get $2
   local.get $4
   call $"assembly/libraries/PersistentMap/PersistentMap<~lib/string/String,assembly/structs/post/Post>#get"
-  local.tee $0
   i32.store offset=48
+  call $~lib/@massalabs/massa-as-sdk/assembly/std/context/caller
+  local.set $0
   global.get $~lib/memory/__stack_pointer
   local.get $0
-  i32.store offset=32
-  global.get $~lib/memory/__stack_pointer
-  local.get $0
-  i32.load offset=8
-  local.tee $0
   i32.store offset=28
   local.get $0
   call $~lib/@massalabs/massa-as-sdk/assembly/std/address/Address#toString
@@ -17213,13 +17209,11 @@
   global.get $~lib/memory/__stack_pointer
   local.get $0
   i32.store
-  call $~lib/@massalabs/massa-as-sdk/assembly/std/context/caller
-  local.set $2
   global.get $~lib/memory/__stack_pointer
-  local.get $2
+  i32.const 1632
   i32.store offset=28
-  local.get $2
-  call $~lib/@massalabs/massa-as-sdk/assembly/std/address/Address#toString
+  i32.const 1632
+  call $~lib/@massalabs/massa-as-sdk/assembly/std/storage/get<~lib/string/String>
   local.set $2
   global.get $~lib/memory/__stack_pointer
   local.get $2
@@ -17227,38 +17221,11 @@
   local.get $0
   local.get $2
   call $~lib/string/String.__eq
-  if (result i32)
-   i32.const 1
-  else
-   global.get $~lib/memory/__stack_pointer
-   i32.const 1632
-   i32.store offset=28
-   i32.const 1632
-   call $~lib/@massalabs/massa-as-sdk/assembly/std/storage/get<~lib/string/String>
-   local.set $0
-   global.get $~lib/memory/__stack_pointer
-   local.get $0
-   i32.store
-   call $~lib/@massalabs/massa-as-sdk/assembly/std/context/caller
-   local.set $2
-   global.get $~lib/memory/__stack_pointer
-   local.get $2
-   i32.store offset=28
-   local.get $2
-   call $~lib/@massalabs/massa-as-sdk/assembly/std/address/Address#toString
-   local.set $2
-   global.get $~lib/memory/__stack_pointer
-   local.get $2
-   i32.store offset=16
-   local.get $0
-   local.get $2
-   call $~lib/string/String.__eq
-  end
   i32.eqz
   if
    i32.const 9280
    i32.const 6048
-   i32.const 482
+   i32.const 483
    i32.const 3
    call $~lib/builtins/abort
    unreachable

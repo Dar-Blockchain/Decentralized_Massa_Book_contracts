@@ -15,7 +15,10 @@ import {
   getPostComments,
   getAllComments,
   testFactoryAddComment,
-  getFactoryPostComments
+  getFactoryPostComments,
+  testDeletePost,
+  verifyPostDeleted,
+  testDeletePostSimple
 } from './test/contractFactoryFunc';
 import { getScByteCode } from './utils';
 
@@ -261,6 +264,145 @@ async function testFactoryGetCommentsScenario() {
   }
 }
 
+async function testDeletePostScenario() {
+  console.log("******************* Testing Delete Post Functionality ************* ");
+  
+  // Get the profile address for the post author
+  const profile1Address = await __getProfileAddress(contract, account);
+  const cont1 = new SmartContract(provider, profile1Address);
+  
+  console.log("Creating a new post to delete...");
+  await _createPost(cont1); // This should create post ID 2
+  
+  const postIdToDelete = 2n; // Delete the second post
+  
+  // Show posts before deletion
+  console.log("Posts before deletion:");
+  const postsBefore = await _getPosts(profile1Address);
+  console.log(`Found ${postsBefore.length} posts before deletion`);
+  
+  // Test successful deletion by the owner (calling directly on their profile contract)
+  console.log("Testing deletion by post owner (should succeed)...");
+  const deleteSuccess = await testDeletePost(cont1, postIdToDelete);
+  
+  if (deleteSuccess) {
+    console.log("Delete operation completed successfully!");
+    
+    // Verify the post was actually deleted
+    console.log("Verifying post deletion...");
+    const isDeleted = await verifyPostDeleted(cont1, postIdToDelete);
+    
+    if (isDeleted) {
+      console.log("✅ Post deletion verified successfully!");
+    } else {
+      console.error("❌ Post deletion verification failed - post still exists");
+    }
+    
+    // Show posts after deletion
+    console.log("Posts after deletion:");
+    const postsAfter = await _getPosts(profile1Address);
+    console.log(`Found ${postsAfter.length} posts after deletion`);
+    
+  } else {
+    console.error("Delete operation failed!");
+  }
+}
+
+async function testDeletePostErrorCases() {
+  console.log("******************* Testing Delete Post Error Cases ************* ");
+  
+  // Get profile addresses
+  const profile1Address = await __getProfileAddress(contract, account);
+  const profile2Address = await __getProfileAddress(contract2, account2);
+  const cont1 = new SmartContract(provider, profile1Address);
+  const cont2 = new SmartContract(provider2, profile2Address);
+  
+  // Test Case 1: Try to delete with unauthorized user (user 2 trying to delete user 1's post on user 1's profile)
+  console.log("Test Case 1: Unauthorized deletion attempt...");
+  const postIdToDelete = 1n; // Try to delete user 1's first post
+  
+  try {
+    // User 2 trying to call deletePost on user 1's profile contract
+    const unauthorizedCont1 = new SmartContract(provider2, profile1Address);
+    const unauthorizedDeleteSuccess = await testDeletePost(unauthorizedCont1, postIdToDelete);
+    
+    if (unauthorizedDeleteSuccess) {
+      console.error("❌ ERROR: Unauthorized deletion succeeded (should have failed)");
+    } else {
+      console.log("✅ SUCCESS: Unauthorized deletion properly blocked");
+    }
+  } catch (error) {
+    console.log("✅ SUCCESS: Unauthorized deletion blocked with error:", error);
+  }
+  
+  // Test Case 2: Try to delete non-existent post
+  console.log("Test Case 2: Non-existent post deletion attempt...");
+  const nonExistentPostId = 9999n;
+  
+  try {
+    const nonExistentDeleteSuccess = await testDeletePost(cont1, nonExistentPostId);
+    
+    if (nonExistentDeleteSuccess) {
+      console.error("❌ ERROR: Non-existent post deletion succeeded (should have failed)");
+    } else {
+      console.log("✅ SUCCESS: Non-existent post deletion properly blocked");
+    }
+  } catch (error) {
+    console.log("✅ SUCCESS: Non-existent post deletion blocked with error:", error);
+  }
+  
+  // Test Case 3: Try to delete the same post twice
+  console.log("Test Case 3: Double deletion attempt...");
+  const alreadyDeletedPostId = 2n; // This was deleted in the previous test
+  
+  try {
+    const doubleDeleteSuccess = await testDeletePost(cont1, alreadyDeletedPostId);
+    
+    if (doubleDeleteSuccess) {
+      console.error("❌ ERROR: Double deletion succeeded (should have failed)");
+    } else {
+      console.log("✅ SUCCESS: Double deletion properly blocked");
+    }
+  } catch (error) {
+    console.log("✅ SUCCESS: Double deletion blocked with error:", error);
+  }
+}
+
+async function testSimpleDeletePostDemo() {
+  console.log("******************* Testing Simple Delete Post (Only PostId Parameter) ************* ");
+  
+  // Create another post to delete using the simple method
+  const profile1Address = await __getProfileAddress(contract, account);
+  const cont1 = new SmartContract(provider, profile1Address);
+  
+  console.log("Creating a post to delete with simple method...");
+  await _createPost(cont1); // This should create post ID 3 (assuming previous posts were created)
+  
+  const postIdToDelete = 3n;
+  
+  console.log("Using testDeletePostSimple - only needs factory contract, author account, and postId");
+  console.log("Parameters: factory contract, account (author), postId");
+  
+  // This is the simplified way - only postId as main parameter
+  const deleteSuccess = await testDeletePostSimple(contract, account, postIdToDelete);
+  
+  if (deleteSuccess) {
+    console.log("✅ Simple delete post method worked successfully!");
+    console.log("✅ This method automatically:");
+    console.log("   - Gets the profile address from the factory");
+    console.log("   - Creates the proper provider for the author");
+    console.log("   - Calls deletePost with permission validation");
+    
+    // Verify deletion
+    const isDeleted = await verifyPostDeleted(cont1, postIdToDelete);
+    if (isDeleted) {
+      console.log("✅ Post deletion verified - simple method works perfectly!");
+    }
+  } else {
+    console.error("❌ Simple delete post method failed");
+  }
+}
+
 await testCreateProfile();
 let profileAdd = await _getProfileAddress();
 let profileAdd2 = await __getProfileAddress(contract2,account2);
@@ -294,6 +436,9 @@ await testCommentsScenario();
 
 await testFactoryCommentsScenario();
 await testFactoryGetCommentsScenario();
+await testDeletePostScenario();
+await testDeletePostErrorCases();
+await testSimpleDeletePostDemo();
 
 await __getFollowed()
 await _getFollowersNbr(account2.address.toString())
