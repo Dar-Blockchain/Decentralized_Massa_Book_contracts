@@ -11,6 +11,8 @@ export class Post implements Serializable<Post> {
     public isRepost: boolean = false,
     public repostedPostId: bigint = 0n, // Use bigint for u64 values
     public createdAt: bigint = 0n, // Use bigint for timestamp
+    public likesNbr: bigint = 0n, // Use bigint for u64 values
+    public commentNbr: bigint = 0n, // Use bigint for u64 values
   ) {}
 
   // Serialize the Post object for sending to the backend
@@ -24,7 +26,9 @@ export class Post implements Serializable<Post> {
       .addString(this.image)
       .addBool(this.isRepost)
       .addU64(this.repostedPostId)
-      .addU64(this.createdAt);
+      .addU64(this.createdAt)
+      .addU64(this.likesNbr)
+      .addU64(this.commentNbr);
 
     return new Uint8Array(args.serialize());
   }
@@ -42,6 +46,8 @@ export class Post implements Serializable<Post> {
     this.isRepost = args.nextBool(); // Deserialize isRepost
     this.repostedPostId = args.nextU64(); // Deserialize repostedPostId as bigint
     this.createdAt = args.nextU64(); // Deserialize createdAt as bigint
+    this.likesNbr = args.nextU64(); // Deserialize likesNbr as bigint
+    this.commentNbr = args.nextU64(); // Deserialize commentNbr as bigint
 
     return { instance: this, offset: args.getOffset() };
   }

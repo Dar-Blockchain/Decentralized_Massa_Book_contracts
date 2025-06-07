@@ -65,7 +65,7 @@ import {
    * using the template address stored in on-chain storage.
    *
    * Arguments (encoded in `binaryArgs`):
-   *   - userId (string): A unique identifier (e.g. user’s address or username).
+   *   - userId (string): A unique identifier (e.g. user's address or username).
    */
   export function createAccount(binaryArgs: StaticArray<u8>): void {
     const args = new Args(binaryArgs);
@@ -162,4 +162,96 @@ import {
      nbFollowers  = followers.getSome(profile1);
     }
     return u64ToBytes(nbFollowers);
+  }
+
+  /**
+   * Adds a comment to a post through the factory.
+   * 
+   * Arguments:
+   *   - postId (u64): The ID of the post to comment on
+   *   - text (string): The comment text
+   *   - postAuthorAddress (string): The address of the post author
+   *   - commenterAddress (string): The address of the commenter
+   */
+  export function addPostComment(binaryArgs: StaticArray<u8>): void {
+    const args = new Args(binaryArgs);
+    const postId = args.nextU64().expect('Post ID required');
+    const text = args.nextString().expect('Comment text required');
+    const postAuthorAddress = args.nextString().expect('Post author address required');
+    const commenterAddress = args.nextString().expect('Commenter address required');
+
+    // Get the profile contract address of the post author
+    assert(
+      profileMap.contains(postAuthorAddress),
+      `No profile contract found for post author: ${postAuthorAddress}`,
+    );
+    const authorProfileContract = profileMap.getSome(postAuthorAddress);
+
+    // Get the profile contract address of the commenter
+    assert(
+      profileMap.contains(commenterAddress),
+      `No profile contract found for commenter: ${commenterAddress}`,
+    );
+    const commenterProfileContract = profileMap.getSome(commenterAddress);
+
+    // Get the commenter's profile information
+    const commenterProfile = new IProfile(new Address(commenterProfileContract)).getProfile(commenterAddress);
+    const commenterName = commenterProfile.firstName + ' ' + commenterProfile.lastName;
+    const commenterAvatar = commenterProfile.avatar;
+
+    // Add the comment to the author's profile contract
+    new IProfile(new Address(authorProfileContract)).addPostComment(
+      postId,
+      text,
+      commenterName,
+      commenterAvatar
+    );
+
+    // Emit an event for the comment addition
+    generateEvent(
+      createEvent('CommentAdded', [
+        postId.toString(),
+        postAuthorAddress,
+        commenterAddress,
+        text,
+        commenterName
+      ]),
+    );
+  }
+
+  /**
+   * Gets comments for a specific post through the factory.
+   * 
+   * Arguments:
+   *   - postAuthorAddress (string): The address of the post author
+   *   - postId (u64): The ID of the post to get comments for
+   * 
+   * Returns:
+   *   - Serialized array of comments for the post
+   */
+  export function getPostComments(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+    const args = new Args(binaryArgs);
+    const postAuthorAddress = args.nextString().expect('Post author address required');
+    const postId = args.nextU64().expect('Post ID required');
+
+    // Get the profile contract address of the post author
+    assert(
+      profileMap.contains(postAuthorAddress),
+      `No profile contract found for post author: ${postAuthorAddress}`,
+    );
+    const authorProfileContract = profileMap.getSome(postAuthorAddress);
+
+    // Get the comments from the author's profile contract
+    const comments = new IProfile(new Address(authorProfileContract)).getPostComments(postId);
+
+    // Emit an event for tracking
+    generateEvent(
+      createEvent('CommentsRetrieved', [
+        postId.toString(),
+        postAuthorAddress,
+        authorProfileContract
+      ]),
+    );
+
+    return comments;
   }

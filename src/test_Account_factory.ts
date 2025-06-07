@@ -9,7 +9,13 @@ import {
 import {
   createProfile,getProfileAddress,testCreatePost,getPosts,getUserProfile,followUser,getFollowedPosts,getOwnerAddress,
   getFollowed,
-  getFollowersNbr
+  getFollowersNbr,
+  testUpdateProfile,
+  testAddComment,
+  getPostComments,
+  getAllComments,
+  testFactoryAddComment,
+  getFactoryPostComments
 } from './test/contractFactoryFunc';
 import { getScByteCode } from './utils';
 
@@ -129,6 +135,132 @@ async function followProfileTest() {
 async function _getFollowersNbr(usAddress : string){
   getFollowersNbr(contract,usAddress) 
 }
+
+async function testUpdateProfileScenario() {
+  console.log("******************* Testing Profile Update ************* ");
+  
+  // Get the profile address for account 1
+  const profile1Address = await __getProfileAddress(contract, account);
+  const cont1 = new SmartContract(provider, profile1Address);
+  
+  // Test updating profile with new information
+  const updateSuccess = await testUpdateProfile(
+    cont1,
+    account.address.toString(),
+    "Hatem Updated", // Updated first name
+    "Azaiez Updated", // Updated last name
+    "Senior Blockchain Developer", // Updated bio
+    "https://gratisography.com/wp-content/uploads/2025/01/gratisography-updated-avatar.jpg", // Updated avatar
+    "Tunisia", // Updated country
+    "Tunis", // Updated city
+    "@hatem_updated", // Updated telegram
+    "@hatem_blockchain_updated" // Updated X handle
+  );
+  
+  if (updateSuccess) {
+    console.log("Profile update test passed!");
+    
+    // Verify the update by getting the profile again
+    console.log("******************* Verifying Updated Profile ************* ");
+    await _getProfile(profile1Address, account.address.toString());
+  } else {
+    console.error("Profile update test failed!");
+  }
+}
+
+async function testCommentsScenario() {
+  console.log("******************* Testing Factory Comments Functionality ************* ");
+  
+  // Get posts to comment on (assuming post ID 1 exists from previous tests)
+  const postId = 1n; // First post created by user 1
+  
+  // Add comment from user 1 on their own post through factory
+  console.log("Adding comment from user 1 on their own post through factory...");
+  const comment1Success = await testFactoryAddComment(
+    contract, // The factory contract
+    postId,
+    "This is my own comment on my post through factory!",
+    account.address.toString(), // Post author (user 1)
+    account.address.toString()  // Commenter (user 1)
+  );
+  
+  // Add comment from user 2 on user 1's post through factory
+  console.log("Adding comment from user 2 on user 1's post through factory...");
+  const comment2Success = await testFactoryAddComment(
+    contract, // The factory contract
+    postId,
+    "I totally agree! Very insightful content from user 2!",
+    account.address.toString(), // Post author (user 1)
+    account2.address.toString() // Commenter (user 2)
+  );
+  
+  if (comment1Success && comment2Success) {
+    console.log("Factory comments added successfully!");
+    
+    // Get the author's profile address to check comments
+    const profile1Address = await __getProfileAddress(contract, account);
+    const cont1 = new SmartContract(provider, profile1Address);
+    
+    // Get all comments for the specific post
+    console.log("******************* Getting Post Comments ************* ");
+    await getFactoryPostComments(contract, account.address.toString(), postId);
+    
+    
+  } else {
+    console.error("Failed to add factory comments!");
+  }
+}
+
+async function testFactoryCommentsScenario() {
+  console.log("******************* Testing Factory Comments Functionality ************* ");
+  
+  // Test commenting through the factory
+  const postId = 1n; // Comment on the first post
+  
+  console.log("Adding comment through factory from user 2 to user 1's post...");
+  const factoryCommentSuccess = await testFactoryAddComment(
+    contract, // The factory contract
+    postId,
+    "This is a comment added through the factory!",
+    account.address.toString(), // Post author (user 1)
+    account2.address.toString() // Commenter (user 2)
+  );
+  
+  if (factoryCommentSuccess) {
+    console.log("Factory comment added successfully!");
+    
+    // Verify the comment was added by checking the post author's profile
+    const profile1Address = await __getProfileAddress(contract, account);
+    const cont1 = new SmartContract(provider, profile1Address);
+    
+    console.log("******************* Verifying Factory Comment ************* ");
+    await getFactoryPostComments(contract, account.address.toString(), postId);
+    
+  } else {
+    console.error("Failed to add factory comment!");
+  }
+}
+
+async function testFactoryGetCommentsScenario() {
+  console.log("******************* Testing Factory Get Comments Functionality ************* ");
+  
+  const postId = 1n; // Get comments for the first post
+  
+  console.log("Getting comments through factory for user 1's post...");
+  const factoryComments = await getFactoryPostComments(
+    contract, // The factory contract
+    account.address.toString(), // Post author (user 1)
+    postId
+  );
+  
+  if (factoryComments && factoryComments.length > 0) {
+    console.log("Factory successfully retrieved", factoryComments.length, "comments!");
+    console.log("Comments:", factoryComments);
+  } else {
+    console.log("No comments found or empty result from factory");
+  }
+}
+
 await testCreateProfile();
 let profileAdd = await _getProfileAddress();
 let profileAdd2 = await __getProfileAddress(contract2,account2);
@@ -155,6 +287,13 @@ await _getOwnerAddress(profileAdd2)
 
 await _getPosts(profileAdd) 
 await followProfileTest();
+
+await testUpdateProfileScenario();
+
+await testCommentsScenario();
+
+await testFactoryCommentsScenario();
+await testFactoryGetCommentsScenario();
 
 await __getFollowed()
 await _getFollowersNbr(account2.address.toString())

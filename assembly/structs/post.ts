@@ -12,6 +12,8 @@ export class Post implements Serializable {
     public isRepost: bool = false,
     public repostedPostId: u64 = 0,
     public createdAt: u64 = 0,
+    public likesNbr: u64 = 0,
+    public commentNbr: u64 = 0,
   ) {}
 
   serialize(): StaticArray<u8> {
@@ -25,6 +27,8 @@ export class Post implements Serializable {
       .add(this.isRepost)
       .add(this.repostedPostId)
       .add(this.createdAt)
+      .add(this.likesNbr)
+      .add(this.commentNbr)
       .serialize();
   }
 
@@ -46,6 +50,8 @@ export class Post implements Serializable {
     this.createdAt = createdAtTimestamp.isOk()
       ? createdAtTimestamp.unwrap()
       : 0;
+    this.likesNbr = args.nextU64().expect('Failed to deserialize likesNbr');
+    this.commentNbr = args.nextU64().expect('Failed to deserialize commentNbr');
 
     return new Result(args.offset);
   }

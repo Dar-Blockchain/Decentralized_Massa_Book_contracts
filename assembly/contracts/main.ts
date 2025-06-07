@@ -351,7 +351,7 @@ export function createPost(binaryArgs: StaticArray<u8>): void {
 
   const postId = u64.parse(Storage.get(POST_ID_KEY));
 
-  const post = new Post(postId, caller(),profile.firstName+' '+profile.lastName,profile.avatar, text, image, false, 0, createdAt);
+  const post = new Post(postId, caller(),profile.firstName+' '+profile.lastName,profile.avatar, text, image, false, 0, createdAt, 0, 0);
 
   postMap.set(postId.toString(), post);
 
@@ -650,8 +650,14 @@ export function likePost(binaryArgs: StaticArray<u8>): void {
 
   likesMap.set(lastLikeId, like);
 
-  Storage.set(LIKE_ID_KEY, (lastLikeId + 1).toString());
+  // Get the post and increment likes number
+  let post = postMap.get(postId.toString(), new Post());
+  let _likesNbr:u64 = post.likesNbr + 1;
+  post.likesNbr = _likesNbr;
+  postMap.set(postId.toString(), post);
 
+  Storage.set(LIKE_ID_KEY, (lastLikeId + 1).toString());
+  
   // Generate an event
   generateEvent(createEvent('LikePost', [userAddress, postId.toString()]));
 }
@@ -694,6 +700,11 @@ export function unlikePost(binaryArgs: StaticArray<u8>): void {
 
   // Unlike the post
   likesMap.delete(likeId);
+
+  // Get the post and decrement likes number
+  let post = postMap.get(postId.toString(), new Post());
+  post.likesNbr = post.likesNbr - 1;
+  postMap.set(postId.toString(), post);
 
   // generate an event
   generateEvent(
@@ -780,18 +791,12 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
   const args = new Args(binaryArgs);
   const postId = args.nextU64().unwrap();
   const text = args.nextString().unwrap();
-  const CommenterProfile = args.nextString().unwrap();
+  const CommenterName = args.nextString().unwrap();
+  const CommenterAvatar = args.nextString().unwrap();
   // const parentCommentIdOpt = args.nextU64(); // Optional parent comment ID
 
+  // Check if the post exists
   assert(postMap.contains(postId.toString()), 'Post not found');
-
-  // Get the commenter's profile
-  const profile = profileMap.get(caller().toString(), new Profile());
-
-  assert(
-    profile.address.toString() == caller().toString(),
-    'User has no profile. Please create a profile first.',
-  );
 
   const commentId = u64.parse(Storage.get(COMMENT_ID_KEY));
 
@@ -802,15 +807,12 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
   //   assert(commentsMap.contains(parentCommentId), 'Parent comment not found');
   //   parentId = parentCommentId;
   // }
-  const profile : Profile = new IProfile(new Address(CommenterProfile)).getProfile(caller().toString());
   const comment = new Comment(
     commentId,
     postId,
     caller(),
-    profile.firstName+" "+profile.lastName,
-    profile.avatar,
-    profile.firstName + ' ' + profile.lastName,
-    profile.avatar,
+    CommenterName,
+    CommenterAvatar,
     text,
     timestamp(),
     parentId,
@@ -818,6 +820,20 @@ export function addPostComment(binaryArgs: StaticArray<u8>): void {
 
   // Store the comment
   commentsMap.set(commentId, comment);
+
+  // Get the post and increment comment number
+  let post = postMap.get(u64(postId).toString(), new Post());
+  generateEvent(
+    createEvent('commentNbr__', [
+      post.id.toString(),
+      post.commentNbr.toString(),
+      post.text.toString(),
+
+    ]),
+  );
+  let _commentNbr:u64 = post.commentNbr + 1;
+  post.commentNbr = _commentNbr;
+  postMap.set(u64(postId).toString(), post);
 
   // Increment the COMMENT_ID_KEY
   Storage.set(COMMENT_ID_KEY, (commentId + 1).toString());
@@ -919,6 +935,11 @@ export function removeComment(binaryArgs: StaticArray<u8>): void {
       comment.commenter.toString() == Storage.get(OWNER_KEY),
     'Caller has no permission to delete this comment',
   );
+
+  // Get the post and decrement comment number
+  let post = postMap.get(comment.postId.toString(), new Post());
+  post.commentNbr = post.commentNbr - 1;
+  postMap.set(comment.postId.toString(), post);
 
   // Delete the comment
   commentsMap.delete(commentId);

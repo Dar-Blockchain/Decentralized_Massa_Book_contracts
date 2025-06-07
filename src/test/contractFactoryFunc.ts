@@ -165,3 +165,156 @@ export async function followUser(contract: SmartContract, userAddress: string,us
     return false;
   }
 }
+
+export async function testUpdateProfile(
+  contract: SmartContract,
+  address: string,
+  firstName: string,
+  lastName: string,
+  bio: string,
+  avatar: string,
+  country: string,
+  city: string,
+  telegram: string,
+  xHandle: string
+): Promise<boolean> {
+  console.log('Testing updateProfile...');
+  
+  // Create a Profile object with updated information
+  const updatedProfile = new Profile(
+    address,
+    firstName,
+    lastName,
+    avatar,
+    bio,
+    country,
+    city,
+    telegram,
+    xHandle
+  );
+
+  const args = new Args().addSerializable(updatedProfile);
+  
+  const operation: Operation = await contract.call('updateProfile', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Profile updated successfully');
+    return true;
+  } else {
+    console.error('Update profile operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function testAddComment(
+  contract: SmartContract,
+  postId: bigint,
+  text: string,
+  CommenterName: string,
+  CommenterAvatar: string
+): Promise<boolean> {
+  console.log('Testing addPostComment...');
+  
+  const args = new Args()
+    .addU64(postId)
+    .addString(text)
+    .addString(CommenterName)
+    .addString(CommenterAvatar)
+  
+  const operation: Operation = await contract.call('addPostComment', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Comment added successfully');
+    return true;
+  } else {
+    console.error('Add comment operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getPostComments(contract: SmartContract, postId: bigint) {
+  console.log('Getting comments for post ID:', postId);
+  
+  const args = new Args().addU64(postId);
+  const result = await contract.read('getPostComments', args.serialize());
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log('Post Comments:', deserializedComments);
+  return deserializedComments;
+}
+
+export async function getAllComments(contract: SmartContract) {
+  console.log('Getting all comments...');
+  
+  const args = new Args();
+  const result = await contract.read('getAllComments', args.serialize());
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log('All Comments:', deserializedComments);
+  return deserializedComments;
+}
+
+export async function testFactoryAddComment(
+  factoryContract: SmartContract,
+  postId: bigint,
+  text: string,
+  postAuthorAddress: string,
+  commenterAddress: string
+): Promise<boolean> {
+  console.log('Testing factory addPostComment...');
+  
+  const args = new Args()
+    .addU64(postId)
+    .addString(text)
+    .addString(postAuthorAddress)
+    .addString(commenterAddress);
+  
+  const operation: Operation = await factoryContract.call('addPostComment', args.serialize(), {
+    coins: Mas.fromString('0.1'),
+  });
+  console.log('operation :'+operation.id)
+  const operationStatus = await operation.waitFinalExecution();
+  
+  if (operationStatus === OperationStatus.Success) {
+    console.log('Factory comment added successfully');
+    return true;
+  } else {
+    console.error('Factory add comment operation failed with status:', operationStatus);
+    return false;
+  }
+}
+
+export async function getFactoryPostComments(
+  factoryContract: SmartContract,
+  postAuthorAddress: string,
+  postId: bigint
+) {
+  console.log('Getting comments through factory for post ID:', postId, 'by author:', postAuthorAddress);
+  
+  const args = new Args()
+    .addString(postAuthorAddress)
+    .addU64(postId);
+  
+  const result = await factoryContract.read('getPostComments', args.serialize());
+
+  const deserializedComments = new Args(
+    result.value,
+  ).nextSerializableObjectArray<Comment>(Comment);
+
+  console.log('Factory Post Comments:', deserializedComments);
+  return deserializedComments;
+}

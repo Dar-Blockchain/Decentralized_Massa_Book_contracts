@@ -49,8 +49,25 @@ export class IProfile{
         return res.toString();
       }
 
+      addPostComment(postId: u64, text: string, commenterName: string, commenterAvatar: string): void {
+        call(
+          this._origin,
+          'addPostComment',
+          new Args().add(postId).add(text).add(commenterName).add(commenterAvatar),
+          0,
+        );
+      }
 
-      
+      getPostComments(postId: u64): StaticArray<u8> {
+        const res = call(
+          this._origin,
+          'getPostComments',
+          new Args().add(postId),
+          0,
+        );
+        return res;
+      }
+
       
 
       
